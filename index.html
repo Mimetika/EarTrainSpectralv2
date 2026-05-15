@@ -1,0 +1,4687 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mimetika · Herramientas de Representación - Entrenamiento Auditivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --cream-100: #F5EDDF;
+  --cream-200: #ECE0CB;
+  --cream-300: #DDCEB0;
+  --cream-400: #C7B690;
+  --terracotta: #B85847;
+  --terracotta-soft: #C97560;
+  --terracotta-deep: #8E3F30;
+  --sage: #7C9070;
+  --sage-soft: #9AAB8C;
+  --sage-deep: #5A6E50;
+  --wood: #8B6F47;
+  --wood-deep: #5F4A2C;
+  --ink: #2A2114;
+  --ink-soft: #5A4D3A;
+  --ink-faint: #8C7E6A;
+  --paper: #FAF4E8;
+  --shadow: rgba(42, 33, 20, 0.12);
+  --shadow-strong: rgba(42, 33, 20, 0.22);
+  --grid-line: rgba(95, 74, 44, 0.18);
+  --good: #5A6E50;
+  --bad: #8E3F30;
+  --warn: #B07A2C;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--cream-100);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(184, 88, 71, 0.06), transparent 60%),
+    radial-gradient(ellipse 60% 80% at 100% 100%, rgba(124, 144, 112, 0.07), transparent 55%),
+    repeating-linear-gradient(
+      135deg,
+      transparent 0,
+      transparent 24px,
+      rgba(95, 74, 44, 0.018) 24px,
+      rgba(95, 74, 44, 0.018) 25px
+    );
+  min-height: 100vh;
+}
+
+.mono { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'ss01', 'tnum'; }
+
+header.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 28px 36px 20px 36px;
+  border-bottom: 1px solid var(--cream-300);
+  background: var(--paper);
+  position: relative;
+}
+
+header.app-header::after {
+  content: "";
+  position: absolute;
+  left: 36px;
+  right: 36px;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--terracotta) 0%, var(--terracotta) 12%, transparent 12.5%);
+}
+
+.brand-block {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+}
+
+.brand-mark {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  color: var(--terracotta-deep);
+  position: relative;
+  padding-right: 14px;
+}
+
+.brand-mark::after {
+  content: "";
+  position: absolute;
+  right: 0; top: 8px; bottom: 8px;
+  width: 1px;
+  background: var(--cream-400);
+}
+
+.brand-title {
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.brand-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-left: 12px;
+}
+
+.score-pill {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  padding: 10px 18px;
+  background: var(--cream-200);
+  border: 1px solid var(--cream-300);
+  border-radius: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.score-pill .stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
+.score-pill .stat .lbl {
+  color: var(--ink-faint);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 3px;
+}
+
+.score-pill .stat .val {
+  color: var(--ink);
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.score-pill .sep {
+  width: 1px;
+  height: 22px;
+  background: var(--cream-400);
+}
+
+main.layout {
+  display: grid;
+  grid-template-columns: 320px 1fr 280px;
+  gap: 24px;
+  padding: 24px 36px 40px 36px;
+  max-width: 1680px;
+  margin: 0 auto;
+}
+
+@media (max-width: 1280px) {
+  main.layout {
+    grid-template-columns: 280px 1fr;
+  }
+  aside.stats-col {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  main.layout {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+}
+
+aside, section.stage {
+  background: var(--paper);
+  border: 1px solid var(--cream-300);
+  padding: 22px 22px 26px 22px;
+  position: relative;
+}
+
+aside.config-col h2,
+aside.stats-col h2,
+section.stage h2 {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--terracotta-deep);
+  margin-bottom: 18px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--cream-300);
+}
+
+.field-group {
+  margin-bottom: 18px;
+}
+
+.field-group:last-child { margin-bottom: 0; }
+
+.field-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 7px;
+}
+
+.field-label .name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.field-label .val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--terracotta);
+  font-weight: 500;
+}
+
+select, input[type="number"], input[type="text"], input[type="file"] {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 9px 10px;
+  background: var(--cream-100);
+  color: var(--ink);
+  border: 1px solid var(--cream-400);
+  border-radius: 0;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+select:focus, input:focus {
+  border-color: var(--terracotta);
+  background: var(--paper);
+}
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%238E3F30' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  padding-right: 28px;
+}
+
+input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--cream-300);
+  outline: none;
+  border-radius: 2px;
+  margin: 8px 0 0 0;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--terracotta);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--terracotta-deep);
+  transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--terracotta);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--terracotta-deep);
+}
+
+.btn-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.seg-btn {
+  flex: 1 1 auto;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 4px;
+  background: var(--cream-100);
+  color: var(--ink-soft);
+  border: 1px solid var(--cream-400);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all 0.15s;
+}
+
+.seg-btn:hover {
+  background: var(--cream-200);
+  color: var(--ink);
+}
+
+.seg-btn.active {
+  background: var(--terracotta);
+  color: var(--paper);
+  border-color: var(--terracotta-deep);
+}
+
+.seg-btn.sage.active {
+  background: var(--sage);
+  border-color: var(--sage-deep);
+}
+
+button.action-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 16px;
+  background: var(--cream-200);
+  color: var(--ink);
+  border: 1px solid var(--cream-400);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 0.15s;
+}
+
+button.action-btn:hover:not(:disabled) {
+  background: var(--cream-300);
+  border-color: var(--wood);
+}
+
+button.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+button.action-btn.primary {
+  background: var(--terracotta);
+  color: var(--paper);
+  border-color: var(--terracotta-deep);
+}
+
+button.action-btn.primary:hover:not(:disabled) {
+  background: var(--terracotta-deep);
+}
+
+button.action-btn.sage {
+  background: var(--sage);
+  color: var(--paper);
+  border-color: var(--sage-deep);
+}
+
+button.action-btn.sage:hover:not(:disabled) {
+  background: var(--sage-deep);
+}
+
+button.action-btn.ghost {
+  background: transparent;
+  border-color: var(--cream-400);
+}
+
+section.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 28px 28px 28px;
+}
+
+.stage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--cream-300);
+}
+
+.stage-head h2 {
+  margin: 0; padding: 0; border: none;
+}
+
+.target-info {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink-faint);
+  display: flex;
+  gap: 16px;
+}
+
+.target-info .pair {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.target-info .k {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 10px;
+}
+
+.target-info .v {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.transport {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, var(--cream-200) 0%, var(--cream-100) 100%);
+  border: 1px solid var(--cream-300);
+}
+
+.transport .tr-btn {
+  flex: 0 0 auto;
+  min-width: 44px;
+  height: 38px;
+  padding: 0 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--cream-400);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.12s;
+}
+
+.transport .tr-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.transport .tr-btn:hover { background: var(--cream-200); }
+.transport .tr-btn.armed { background: var(--terracotta); color: var(--paper); border-color: var(--terracotta-deep); }
+.transport .tr-btn.armed.sage { background: var(--sage); border-color: var(--sage-deep); }
+
+.bode-wrap {
+  position: relative;
+  background: var(--cream-100);
+  border: 1px solid var(--cream-300);
+  padding: 14px 14px 8px 14px;
+  overflow: hidden;
+}
+
+.bode-wrap::before {
+  content: "RESPUESTA EN FRECUENCIA";
+  position: absolute;
+  top: 8px; left: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+  z-index: 2;
+}
+
+.bode-wrap svg.bode-svg {
+  display: block;
+  width: 100%;
+  height: 280px;
+  margin-top: 6px;
+}
+
+.bode-wrap.locked .filter-curve {
+  stroke-dasharray: 4 4;
+  opacity: 0.35;
+}
+
+.answer-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.answer-grid.octave { grid-template-columns: repeat(10, 1fr); }
+
+@media (max-width: 700px) {
+  .answer-grid.octave { grid-template-columns: repeat(5, 1fr); }
+}
+
+.freq-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 14px 4px;
+  background: var(--cream-100);
+  color: var(--ink);
+  border: 1px solid var(--cream-400);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s;
+  position: relative;
+}
+
+.freq-btn:hover:not(:disabled):not(.correct):not(.wrong):not(.miss) {
+  background: var(--cream-200);
+  border-color: var(--terracotta);
+  transform: translateY(-1px);
+}
+
+.freq-btn:disabled { cursor: default; }
+
+.freq-btn.correct {
+  background: var(--sage);
+  color: var(--paper);
+  border-color: var(--sage-deep);
+}
+
+.freq-btn.wrong {
+  background: var(--terracotta-deep);
+  color: var(--paper);
+  border-color: var(--terracotta-deep);
+}
+
+.freq-btn.miss {
+  background: var(--cream-200);
+  color: var(--ink-faint);
+  border-color: var(--cream-300);
+  text-decoration: line-through;
+}
+
+.freq-btn.target-marker {
+  background: var(--wood);
+  color: var(--paper);
+  border-color: var(--wood-deep);
+}
+
+.freq-btn .lbl {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.freq-btn .unit {
+  display: block;
+  font-size: 9px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.freq-btn.correct .unit, .freq-btn.wrong .unit, .freq-btn.target-marker .unit { color: rgba(250, 244, 232, 0.7); }
+
+.feedback-box {
+  min-height: 56px;
+  padding: 14px 18px;
+  background: var(--cream-200);
+  border-left: 3px solid var(--cream-400);
+  font-size: 13px;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s;
+}
+
+.feedback-box.ok {
+  background: rgba(124, 144, 112, 0.18);
+  border-left-color: var(--sage-deep);
+  color: var(--sage-deep);
+}
+
+.feedback-box.err {
+  background: rgba(184, 88, 71, 0.13);
+  border-left-color: var(--terracotta-deep);
+  color: var(--terracotta-deep);
+}
+
+.feedback-box.warn {
+  background: rgba(176, 122, 44, 0.15);
+  border-left-color: var(--warn);
+  color: var(--wood-deep);
+}
+
+.feedback-box .fb-icon {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 18px;
+  flex: 0 0 auto;
+}
+
+.feedback-box .fb-text {
+  flex: 1 1 auto;
+}
+
+.feedback-box .fb-text strong {
+  font-weight: 700;
+}
+
+aside.stats-col h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  margin: 18px 0 8px 0;
+  font-weight: 500;
+}
+
+aside.stats-col h3:first-of-type { margin-top: 0; }
+
+.history-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.history-strip .dot {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--cream-400);
+  background: var(--cream-100);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--ink-faint);
+  display: inline-block;
+}
+
+.history-strip .dot.hit { background: var(--sage); border-color: var(--sage-deep); }
+.history-strip .dot.miss { background: var(--terracotta); border-color: var(--terracotta-deep); }
+.history-strip .dot.skip { background: var(--cream-300); border-color: var(--wood); }
+
+.band-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--cream-300);
+}
+
+.band-stat-row:last-child { border-bottom: none; }
+
+.band-stat-row .bs-freq {
+  flex: 0 0 56px;
+  color: var(--ink-soft);
+}
+
+.band-stat-row .bs-bar {
+  flex: 1 1 auto;
+  height: 6px;
+  background: var(--cream-200);
+  position: relative;
+  overflow: hidden;
+}
+
+.band-stat-row .bs-bar .bs-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--sage);
+}
+
+.band-stat-row .bs-bar .bs-fill.bad { background: var(--terracotta); }
+
+.band-stat-row .bs-pct {
+  flex: 0 0 36px;
+  text-align: right;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.formula-card { display: none; }
+
+footer.app-foot {
+  text-align: center;
+  padding: 22px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.upload-row {
+  display: flex; gap: 6px; align-items: center;
+}
+
+.upload-row input[type="file"] {
+  font-size: 11px; padding: 6px;
+}
+
+.upload-row .file-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--terracotta);
+  margin-top: 4px;
+  word-break: break-all;
+}
+
+.kbd {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 1px 5px;
+  background: var(--paper);
+  border: 1px solid var(--cream-400);
+  border-radius: 2px;
+  color: var(--ink-soft);
+  margin: 0 2px;
+}
+
+.shortcuts-list {
+  list-style: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.shortcuts-list li {
+  padding: 4px 0;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed var(--cream-300);
+}
+
+.shortcuts-list li:last-child { border-bottom: none; }
+
+.shortcuts-list .desc { color: var(--ink); }
+
+.bode-wrap .reveal-overlay {
+  position: absolute;
+  inset: 14px 14px 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(245, 237, 223, 0.9), rgba(236, 224, 203, 0.94));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--terracotta-deep);
+  text-transform: uppercase;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  z-index: 1;
+}
+
+.bode-wrap.locked .reveal-overlay { opacity: 1; }
+.bode-wrap.unlocked .reveal-overlay { opacity: 0; }
+
+.indicator-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  background: var(--cream-400);
+  vertical-align: middle;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.indicator-dot.live {
+  background: var(--terracotta);
+  box-shadow: 0 0 8px var(--terracotta-soft);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.toast {
+  position: fixed;
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 10px 18px;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+::selection { background: var(--terracotta); color: var(--paper); }
+
+.user-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(42, 33, 20, 0.78);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.user-modal.hidden { display: none; }
+
+.user-modal-card {
+  background: var(--paper);
+  border: 1px solid var(--cream-300);
+  padding: 38px 42px 34px 42px;
+  width: 460px;
+  max-width: 100%;
+  position: relative;
+}
+
+.user-modal-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 64px;
+  height: 3px;
+  background: var(--terracotta);
+}
+
+.user-modal-card .um-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: 1px solid var(--cream-300);
+  color: var(--ink-faint);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+}
+
+.user-modal-card .um-close:hover {
+  background: var(--cream-200);
+  border-color: var(--cream-400);
+  color: var(--ink-soft);
+}
+
+.user-modal-card .um-brand {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: var(--terracotta-deep);
+  margin-bottom: 4px;
+}
+
+.user-modal-card .um-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 22px;
+}
+
+.user-modal-card h2 {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 6px;
+  letter-spacing: -0.005em;
+}
+
+.user-modal-card .um-desc {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin-bottom: 22px;
+}
+
+.user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.user-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.user-form input {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 10px 11px;
+  background: var(--cream-100);
+  color: var(--ink);
+  border: 1px solid var(--cream-400);
+  outline: none;
+  border-radius: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.user-form input:focus {
+  border-color: var(--terracotta);
+  background: var(--paper);
+}
+
+.user-form input.err {
+  border-color: var(--terracotta-deep);
+  background: rgba(184, 88, 71, 0.06);
+}
+
+.user-modal-card .um-submit {
+  width: 100%;
+  padding: 13px;
+  background: var(--terracotta);
+  color: var(--paper);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--terracotta-deep);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.user-modal-card .um-submit:hover { background: var(--terracotta-deep); }
+
+.onb-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(42, 33, 20, 0.78);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.onb-modal.hidden { display: none; }
+
+.onb-card {
+  background: var(--paper);
+  border: 1px solid var(--cream-300);
+  border-radius: 12px;
+  padding: 36px 40px 28px 40px;
+  width: 560px;
+  max-width: 100%;
+  position: relative;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.onb-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 64px;
+  height: 3px;
+  background: var(--sage);
+}
+
+.onb-card .onb-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--cream-300);
+  color: var(--ink-faint);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+}
+
+.onb-card .onb-close:hover {
+  background: var(--cream-200);
+  border-color: var(--ink-faint);
+  color: var(--ink);
+}
+
+.onb-card .onb-brand {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--terracotta);
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.onb-card .onb-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--ink-faint);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.onb-card h2 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 6px 0;
+  letter-spacing: -0.01em;
+}
+
+.onb-card .onb-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 18px 0;
+  line-height: 1.5;
+}
+
+.onb-section {
+  margin-bottom: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cream-200);
+}
+
+.onb-section h3 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  margin: 0 0 8px 0;
+}
+
+.onb-section p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0;
+  line-height: 1.55;
+}
+
+.onb-keys, .onb-modes {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.onb-keys li {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+  padding: 5px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.onb-modes li {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+  padding: 5px 0;
+  line-height: 1.5;
+}
+
+.onb-modes li strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.kbd {
+  display: inline-block;
+  min-width: 60px;
+  text-align: center;
+  padding: 3px 8px;
+  background: var(--cream-200);
+  border: 1px solid var(--cream-300);
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.onb-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--cream-200);
+}
+
+.onb-dontshow {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.onb-dontshow input { cursor: pointer; }
+
+.onb-start {
+  background: var(--sage-deep);
+  color: var(--paper);
+  border: 1px solid var(--sage-deep);
+  border-radius: 6px;
+  padding: 10px 26px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.onb-start:hover { background: var(--sage); }
+
+.help-btn {
+  background: transparent;
+  border: 1px solid var(--cream-300);
+  color: var(--ink-faint);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+}
+
+.help-btn:hover {
+  background: var(--cream-200);
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+
+.freq-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.omit-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  user-select: none;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.12s;
+}
+
+.omit-label:hover {
+  color: var(--ink-soft);
+  background: var(--cream-200);
+  border-color: var(--cream-300);
+}
+
+.omit-label input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  border: 1px solid var(--cream-400);
+  background: var(--paper);
+  position: relative;
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.omit-label input[type="checkbox"]:checked {
+  background: var(--wood);
+  border-color: var(--wood-deep);
+}
+
+.omit-label input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  top: -2px;
+  left: 1px;
+  color: var(--paper);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.freq-btn.omitted {
+  opacity: 0.32;
+  background: var(--cream-200);
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.freq-btn.omitted:hover { transform: none; background: var(--cream-200); border-color: var(--cream-400); }
+
+.adv-stats-block {
+  margin-top: 4px;
+}
+
+.adv-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--cream-300);
+}
+
+.adv-row:last-child { border-bottom: none; }
+
+.adv-row .label { color: var(--ink-soft); }
+.adv-row .val { color: var(--ink); font-weight: 500; }
+
+.dist-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 4px 0;
+}
+
+.dist-bar-row .lbl {
+  flex: 0 0 80px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dist-bar-row .br {
+  flex: 1 1 auto;
+  height: 6px;
+  background: var(--cream-200);
+  position: relative;
+}
+
+.dist-bar-row .br .fl {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--sage);
+}
+
+.dist-bar-row .br .fl.warn { background: var(--warn); }
+.dist-bar-row .br .fl.bad { background: var(--terracotta); }
+
+.dist-bar-row .nm {
+  flex: 0 0 22px;
+  text-align: right;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.learning-curve {
+  display: flex;
+  gap: 3px;
+  margin-top: 6px;
+  align-items: flex-end;
+  height: 28px;
+}
+
+.learning-curve .lc-cell {
+  flex: 1 1 auto;
+  background: var(--cream-300);
+  border: 1px solid var(--cream-400);
+  position: relative;
+  min-height: 4px;
+}
+
+.learning-curve .lc-cell.hit { background: var(--sage); border-color: var(--sage-deep); height: 100%; }
+.learning-curve .lc-cell.miss { background: var(--terracotta); border-color: var(--terracotta-deep); height: 60%; }
+.learning-curve .lc-cell.skip { background: var(--wood); border-color: var(--wood-deep); height: 35%; }
+.learning-curve .lc-cell.empty { background: var(--cream-200); height: 18%; }
+
+.pdf-btn {
+  display: inline-block;
+  margin-top: 10px;
+  margin-right: 6px;
+  padding: 9px 16px;
+  background: var(--sage);
+  color: var(--paper);
+  border: 1px solid var(--sage-deep);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pdf-btn:hover { background: var(--sage-deep); }
+
+.pdf-btn:disabled { opacity: 0.5; cursor: wait; }
+
+.xlsx-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 9px 16px;
+  background: var(--wood);
+  color: var(--paper);
+  border: 1px solid var(--wood-deep);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.xlsx-btn:hover { background: var(--wood-deep); }
+.xlsx-btn:disabled { opacity: 0.5; cursor: wait; }
+
+.report-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 4px;
+}
+
+.auto-timer-bar {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  background: var(--cream-300);
+  margin-top: 6px;
+  opacity: 0;
+  transition: opacity 0.18s;
+  overflow: hidden;
+}
+
+.auto-timer-bar.active { opacity: 1; }
+
+.auto-timer-bar .fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--sage);
+  background-image: linear-gradient(90deg, var(--sage-soft), var(--sage));
+}
+
+.adaptive-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 9px 11px;
+  background: var(--cream-100);
+  border: 1px solid var(--cream-300);
+  user-select: none;
+  transition: background 0.14s, border-color 0.14s;
+}
+
+.adaptive-toggle:hover {
+  background: var(--cream-200);
+  border-color: var(--cream-400);
+}
+
+.adaptive-toggle.on {
+  background: rgba(124, 144, 112, 0.12);
+  border-color: var(--sage);
+  color: var(--ink);
+}
+
+.adaptive-toggle input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--cream-400);
+  background: var(--paper);
+  position: relative;
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.adaptive-toggle input[type="checkbox"]:checked {
+  background: var(--sage);
+  border-color: var(--sage-deep);
+}
+
+.adaptive-toggle input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  top: -3px;
+  left: 1px;
+  color: var(--paper);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.adaptive-toggle .at-txt {
+  flex: 1 1 auto;
+  line-height: 1.35;
+}
+
+.adaptive-toggle .at-hint {
+  display: block;
+  font-size: 10px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+.hist-clear {
+  float: right;
+  background: transparent;
+  border: 1px solid var(--cream-300);
+  color: var(--ink-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  padding: 2px 7px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: -2px;
+  transition: all 0.14s;
+}
+
+.hist-clear:hover {
+  background: var(--cream-200);
+  border-color: var(--cream-400);
+  color: var(--ink-soft);
+}
+
+.hist-row {
+  font-family: 'JetBrains Mono', monospace;
+  padding: 8px 0 9px 0;
+  border-bottom: 1px dashed var(--cream-300);
+}
+
+.hist-row:last-child { border-bottom: none; }
+
+.hist-row .hist-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.hist-row .hist-date {
+  font-size: 9px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.hist-row .hist-pct {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.hist-row .hist-pct strong {
+  color: var(--terracotta-deep);
+}
+
+.hist-row .hist-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 3px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hist-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 500;
+  padding: 1px 5px;
+  background: var(--sage-soft);
+  color: var(--sage-deep);
+  border: 1px solid var(--sage);
+  letter-spacing: 0.06em;
+}
+
+.hist-spark {
+  display: flex;
+  gap: 1px;
+  height: 7px;
+  margin-top: 4px;
+}
+
+.hist-spark .hsp {
+  flex: 1 1 auto;
+  height: 100%;
+  background: var(--cream-300);
+  min-width: 4px;
+}
+
+.hist-spark .hsp.hit { background: var(--sage); }
+.hist-spark .hsp.miss { background: var(--terracotta); }
+.hist-spark .hsp.skip { background: var(--wood); }
+.hist-spark .hsp.empty { background: var(--cream-200); flex: 1 1 100%; }
+
+.hist-empty {
+  color: var(--ink-faint);
+  font-size: 11px;
+  padding: 10px 0;
+  font-style: italic;
+}
+
+.calib-btn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 16px 14px;
+  background: var(--cream-100);
+  color: var(--ink);
+  border: 1px solid var(--cream-400);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+}
+
+.calib-btn:hover {
+  background: var(--cream-200);
+  border-color: var(--wood);
+}
+
+.calib-btn.active {
+  background: var(--terracotta);
+  color: var(--paper);
+  border-color: var(--terracotta-deep);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.18);
+}
+
+.calib-btn .cb-title {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.calib-btn .cb-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+  text-align: center;
+  margin-top: 1px;
+}
+
+.calib-btn.active .cb-sub {
+  color: rgba(250, 244, 232, 0.7);
+}
+
+.calib-btn .cb-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  margin-top: 5px;
+  min-height: 14px;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.calib-btn .cb-status.ref {
+  background: rgba(250, 244, 232, 0.18);
+  color: var(--paper);
+}
+
+.calib-btn .cb-status.boost {
+  background: var(--paper);
+  color: var(--terracotta-deep);
+}
+
+aside, section.stage { border-radius: 12px; }
+.bode-wrap { border-radius: 8px; }
+.feedback-box { border-radius: 7px; }
+.auto-timer-bar { border-radius: 3px; }
+.auto-timer-bar .fill { border-radius: 3px; }
+.transport .tr-btn { border-radius: 6px; }
+.seg-btn { border-radius: 5px; }
+.freq-btn { border-radius: 6px; }
+.pdf-btn { border-radius: 5px; }
+.xlsx-btn { border-radius: 5px; }
+.toast { border-radius: 6px; }
+.user-modal-card { border-radius: 12px; }
+.user-modal-card .um-close { border-radius: 50%; }
+.user-modal-card .um-submit { border-radius: 6px; }
+.user-form input { border-radius: 5px; }
+select, input[type="text"], input[type="email"], input[type="number"], input[type="file"] { border-radius: 5px; }
+.adaptive-toggle { border-radius: 6px; }
+.adaptive-toggle input[type="checkbox"] { border-radius: 3px; }
+.omit-label { border-radius: 4px; }
+.omit-label input[type="checkbox"] { border-radius: 2px; }
+.kbd { border-radius: 3px; }
+.hist-tag { border-radius: 3px; }
+.hist-clear { border-radius: 4px; }
+.lc-cell { border-radius: 2px; }
+.dist-bar-row .br { border-radius: 2px; }
+.dist-bar-row .br .fl { border-radius: 2px; }
+.hist-spark .hsp { border-radius: 1px; }
+.hist-spark .hsp:first-child { border-top-left-radius: 2px; border-bottom-left-radius: 2px; }
+.hist-spark .hsp:last-child { border-top-right-radius: 2px; border-bottom-right-radius: 2px; }
+.calib-btn { border-radius: 8px; }
+
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand-block">
+    <div class="brand-mark">Mimetika</div>
+    <div>
+      <div class="brand-title">Entrenamiento Auditivo</div>
+      <span class="brand-sub">Procesamiento Espectral</span>
+    </div>
+  </div>
+  <div class="score-pill">
+    <div class="stat">
+      <span class="lbl">Aciertos</span>
+      <span class="val mono" id="statHits">0</span>
+    </div>
+    <div class="sep"></div>
+    <div class="stat">
+      <span class="lbl">Total</span>
+      <span class="val mono" id="statTotal">0</span>
+    </div>
+    <div class="sep"></div>
+    <div class="stat">
+      <span class="lbl">Acierto %</span>
+      <span class="val mono" id="statPct">0%</span>
+    </div>
+    <div class="sep"></div>
+    <div class="stat">
+      <span class="lbl">Racha</span>
+      <span class="val mono" id="statStreak">0</span>
+    </div>
+    <div class="sep"></div>
+    <div class="stat">
+      <span class="lbl">Mejor</span>
+      <span class="val mono" id="statBest">0</span>
+    </div>
+    <div class="sep"></div>
+    <button class="help-btn" id="btnHelp" type="button" aria-label="Ver la guía de bienvenida">? Ayuda</button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <aside class="config-col">
+    <h2>Configuración</h2>
+
+    <div class="field-group">
+      <div class="field-label"><span class="name">Señal de Control</span></div>
+      <select id="srcSelect">
+        <option value="pink">Ruido rosa</option>
+        <option value="white">Ruido blanco</option>
+        <option value="drum">Secuencia rítmica</option>
+        <option value="tone">Señal compleja</option>
+        <option value="upload">Señal externa</option>
+      </select>
+      <div id="uploadRow" style="display:none; margin-top:8px;">
+        <div class="upload-row">
+          <input type="file" id="fileInput" accept="audio/*">
+        </div>
+        <div class="file-name" id="fileName"></div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">
+        <span class="name">Nivel de Monitoreo</span>
+        <span class="val mono" id="volReadout">55%</span>
+      </div>
+      <input type="range" id="volSlider" min="0" max="1" step="0.01" value="0.55">
+    </div>
+
+    <div class="field-group">
+      <div class="field-label"><span class="name">Regiones del Espectro</span></div>
+      <select id="rangeSelect">
+        <option value="full">Espectro completo</option>
+        <option value="low">Low (31.5 – 250 Hz)</option>
+        <option value="mid">Mid (250 – 2000 Hz)</option>
+        <option value="himid">Mid - High (1k – 8k Hz)</option>
+        <option value="high">High (4k – 16k Hz)</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">
+        <span class="name">Ganancia</span>
+        <span class="val mono" id="gainReadout">12 dB</span>
+      </div>
+      <input type="range" id="gainSlider" min="2" max="18" step="1" value="12">
+    </div>
+
+    <div class="field-group">
+      <div class="field-label"><span class="name">Modo</span></div>
+      <div class="btn-row">
+        <button class="seg-btn active" data-mode="boost">Amplificación</button>
+        <button class="seg-btn" data-mode="cut">Atenuación</button>
+        <button class="seg-btn" data-mode="both">Ambos</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label"><span class="name">Tipo de Ecualizador</span></div>
+      <select id="filtTypeSelect">
+        <option value="peaking">Parámetrico</option>
+        <option value="lowshelf">Low Shelf</option>
+        <option value="highshelf">High Shelf</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label"><span class="name">Entrenamiento Adaptativo</span></div>
+      <label class="adaptive-toggle" id="adaptiveToggle">
+        <input type="checkbox" id="adaptiveBiasCheck">
+        <span class="at-txt">Incrementa la probabilidad en las regiones/bandas donde hay fallos.
+          <span class="at-hint"></span>
+        </span>
+      </label>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label"><span class="name">Modo Doble Ciego</span></div>
+      <label class="adaptive-toggle" id="blindABToggle">
+        <input type="checkbox" id="blindABCheck">
+        <span class="at-txt">Alterna automáticamente entre señal procesada y sin procesar.
+          <span class="at-hint">Intervalo aprox. de 2 s</span>
+        </span>
+      </label>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label"><span class="name">Modo Calentamiento</span></div>
+      <label class="adaptive-toggle" id="warmupToggle">
+        <input type="checkbox" id="warmupCheck">
+        <span class="at-txt">Agrega 3 escenarios previos no incluidos en las estadísticas.
+          <span class="at-hint">Para calentar el oído</span>
+        </span>
+      </label>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label"><span class="name">Señal de Prueba · Calibración</span></div>
+      <button class="calib-btn" id="btnCalib" type="button" aria-label="Calibración del oído: mantener presionado para alternar entre la señal de referencia y la señal con +12 dB en 1 kHz">
+        <span class="cb-title">Mantener Presionado</span>
+        <span class="cb-sub">Alterna cada 3 s entre la señal seleccionada<br>y la señal con <strong>+12 dB en 1 kHz</strong></span>
+        <span class="cb-status" id="calibLabel"></span>
+      </button>
+    </div>
+
+  </aside>
+
+  <section class="stage">
+
+    <div class="stage-head">
+      <h2>Modulo de entrenamiento</h2>
+      <div class="target-info">
+        <div class="pair"><span class="k mono">Estado</span><span class="v mono" id="trainStatus"><span class="indicator-dot" id="liveDot"></span>Detenido</span></div>
+        <div class="pair"><span class="k mono">Escenario</span><span class="v mono" id="trainScenario">— / 10</span></div>
+        <div class="pair"><span class="k mono">f₀</span><span class="v mono" id="trainFreq">— Hz</span></div>
+        <div class="pair"><span class="k mono">Ganancia</span><span class="v mono" id="trainGain">— dB</span></div>
+      </div>
+    </div>
+
+    <div class="transport">
+      <button class="tr-btn" id="btnPlay" title="Play / Stop (Espacio)" aria-label="Reproducir o detener señal de prueba (atajo: Espacio)">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        <span id="btnPlayLabel">Reproducir</span>
+      </button>
+      <button class="tr-btn" id="btnReveal" title="Ver (R)" aria-label="Revelar la banda objetivo (atajo: R)">Ver</button>
+      <button class="tr-btn" id="btnNoEq" title="Escuchar sin EQ (B)" aria-label="Escuchar la señal sin ecualización (atajo: B)">Sin Eq</button>
+      <button class="tr-btn" id="btnSkip" title="Siguiente (N)" aria-label="Saltar al siguiente escenario (atajo: N)">Siguiente</button>
+      <button class="tr-btn" id="btnNew" title="Nueva sesión" aria-label="Iniciar una nueva secuencia de entrenamiento">↻ Nueva Secuencia</button>
+    </div>
+
+    <div class="bode-wrap locked" id="bodeWrap">
+      <div class="reveal-overlay">Curva oculta · presioná Ver para hacerla visible</div>
+      <svg class="bode-svg" id="bodeSvg" viewBox="0 0 800 300" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div id="answerArea">
+      <div class="answer-grid octave" id="answerGrid"></div>
+    </div>
+
+    <div class="feedback-box" id="feedback">
+      <span class="fb-icon">›</span>
+      <span class="fb-text">Configurá los parámetros y presioná <strong>Reproducir</strong> para comenzar la Sesión.</span>
+    </div>
+
+    <div class="auto-timer-bar" id="autoTimerBar"><span class="fill"></span></div>
+
+  </section>
+
+  <aside class="stats-col">
+    <h2>Análisis</h2>
+
+    <h3>Historial de la Sesión</h3>
+    <div class="history-strip" id="historyStrip"></div>
+
+    <h3>Acierto por banda</h3>
+    <div id="bandStats"></div>
+
+    <h3>Curva de la sesión</h3>
+    <div class="learning-curve" id="learningCurve"></div>
+
+    <h3>Métricas avanzadas</h3>
+    <div class="adv-stats-block" id="advStats"></div>
+
+    <h3>Distribución del error</h3>
+    <div id="errDist"></div>
+
+    <h3>Atajos</h3>
+    <ul class="shortcuts-list">
+      <li><span class="desc">Reproducir / Pausar</span><span><span class="kbd">Espacio</span></span></li>
+      <li><span class="desc">Ver</span><span><span class="kbd">R</span></span></li>
+      <li><span class="desc">Sin Eq</span><span><span class="kbd">B</span></span></li>
+      <li><span class="desc">Siguiente</span><span><span class="kbd">N</span></span></li>
+    </ul>
+
+    <h3>Sesiones anteriores <button class="hist-clear" id="histClear" title="Borrar historial" aria-label="Borrar todas las sesiones del historial">borrar</button></h3>
+    <div id="historyList"></div>
+
+  </aside>
+
+</main>
+
+<footer class="app-foot">Mimetika · Herramientas de Representación</footer>
+
+<div class="toast" id="toast"></div>
+
+<div class="user-modal hidden" id="userModal" role="dialog" aria-modal="true" aria-labelledby="userModalTitle" aria-describedby="userModalDesc">
+  <div class="user-modal-card">
+    <button class="um-close" id="userClose" type="button" aria-label="Cerrar modal">×</button>
+    <div class="um-brand">Mimetika</div>
+    <div class="um-sub">Herramientas de Representación · Aplicaciones Didácticas</div>
+    <h2 id="userModalTitle">Datos del Participante</h2>
+    <p class="um-desc" id="userModalDesc">Necesitamos identificar tu sesión para generar el reporte PDF al finalizar el entrenamiento.</p>
+    <div class="user-form">
+      <label>Nombre<input type="text" id="userFirstName" autocomplete="given-name" maxlength="40"></label>
+      <label>Apellido<input type="text" id="userLastName" autocomplete="family-name" maxlength="40"></label>
+      <label>Email<input type="email" id="userEmail" autocomplete="email" maxlength="80"></label>
+    </div>
+    <button class="um-submit" id="userSubmit">Comenzar Entrenamiento</button>
+  </div>
+</div>
+
+<div class="onb-modal hidden" id="onbModal" role="dialog" aria-modal="true" aria-labelledby="onbTitle" aria-describedby="onbDesc">
+  <div class="onb-card">
+    <button class="onb-close" id="onbClose" type="button" aria-label="Cerrar bienvenida">×</button>
+    <div class="onb-brand">Mimetika</div>
+    <div class="onb-sub">Herramientas de Representación</div>
+    <h2 id="onbTitle">Bienvenido a nuestra herramienta de Entrenamiento Auditivo</h2>
+    <p class="onb-desc" id="onbDesc">Una breve guía para que aproveches la sesión desde el primer escenario.</p>
+
+    <div class="onb-section">
+      <h3>Cómo funciona</h3>
+      <p>El sistema aplica un Ecualizador en una de diez bandas del espectro audible. Cada sesión consta de 10 escenarios. Tu tarea es identificar, escuchando, en qué banda se aplicó la ecualización. Al responder se muestra el resultado y avanza automáticamente al siguiente.</p>
+    </div>
+
+    <div class="onb-section">
+      <h3>Atajos de teclado</h3>
+      <ul class="onb-keys">
+        <li><span class="kbd">Espacio</span> Reproducir o detener la señal</li>
+        <li><span class="kbd">R</span> Ver la banda objetivo</li>
+        <li><span class="kbd">B</span> Escuchar la señal sin EQ</li>
+        <li><span class="kbd">N</span> Saltar al siguiente escenario</li>
+      </ul>
+    </div>
+
+    <div class="onb-section">
+      <h3>Modos disponibles</h3>
+      <ul class="onb-modes">
+        <li><strong>Entrenamiento Adaptativo:</strong> aumenta la frecuencia de aparición de las bandas donde se acumulan fallos.</li>
+        <li><strong>Doble Ciego:</strong> alterna automáticamente entre señal procesada y cruda durante el escenario.</li>
+        <li><strong>Calentamiento:</strong> agrega 3 escenarios previos al inicio sin computar en las estadísticas.</li>
+      </ul>
+    </div>
+
+    <div class="onb-actions">
+      <label class="onb-dontshow"><input type="checkbox" id="onbDontShow" checked> No volver a mostrar</label>
+      <button class="onb-start" id="onbStart">Empezar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var ctxAudio = null;
+var masterGain = null;
+var srcGain = null;
+var filtNode = null;
+var processedGain = null;
+var bypassGain = null;
+var analyserNode = null;
+var srcNode = null;
+var pinkBuf = null;
+var whiteBuf = null;
+var drumBuf = null;
+var toneBuf = null;
+var uploadBuf = null;
+var uploadElem = null;
+
+var SR = 44100;
+var ESC_TOPE = 10;
+var WARMUP_TOPE = 3;
+var AUTO_TIMER_ANSWER_MS = 2400;
+var AUTO_TIMER_SKIP_MS = 600;
+var BLIND_AB_INTERVAL_MS = 1800;
+var BLIND_AB_CROSSFADE_MS = 220;
+var CALIB_INTERVAL_MS = 3000;
+var CALIB_FADE_MS = 180;
+var EQ_RAMP_DEFAULT_MS = 50;
+var SAVED_FILT_RESTORE_DELAY_MS = 220;
+var SPECTRUM_FRAME_STRIDE = 2;
+var SLIDER_DEBOUNCE_MS = 16;
+var HISTORY_MAX_ENTRIES = 60;
+var HISTORY_LIST_DISPLAY = 8;
+var MODAL_FOCUS_DELAY_MS = 60;
+
+var Q_FIJO = 1.414; // ancho ~ 1 octava
+
+var spectrumFrameCounter = 0;
+var blindABInterval = null;
+var calibActive = false;
+var calibInterval = null;
+var calibStep = 0;
+var savedFiltState = null;
+var statsListeners = [];
+var changesQueued = {};
+
+function onChange(key, fn) {
+  statsListeners.push({ k: key, fn: fn });
+}
+
+function notify(key) {
+  changesQueued[key] = true;
+  var i;
+  for (i = 0; i < statsListeners.length; i++) {
+    if (statsListeners[i].k === key || statsListeners[i].k === "*") {
+      try { statsListeners[i].fn(); }
+      catch (e) { console.warn("[notify] listener falló:", e); }
+    }
+  }
+}
+
+function notifyAll() {
+  var i;
+  for (i = 0; i < statsListeners.length; i++) {
+    try { statsListeners[i].fn(); }
+    catch (e) { console.warn("[notifyAll] listener falló:", e); }
+  }
+}
+
+function safeRun(fn, label) {
+  try { return fn(); }
+  catch (e) {
+    console.warn("[" + (label || "safeRun") + "]", e);
+    return null;
+  }
+}
+
+function debounce(fn, ms) {
+  var t = null;
+  return function() {
+    var args = arguments;
+    var ctx = this;
+    if (t) clearTimeout(t);
+    t = setTimeout(function() {
+      t = null;
+      fn.apply(ctx, args);
+    }, ms);
+  };
+}
+
+function resumeContextIfNeeded() {
+  if (!ctxAudio) return;
+  if (ctxAudio.state === "suspended") {
+    safeRun(function() { ctxAudio.resume(); }, "resumeContext");
+  }
+}
+
+var freqOctave = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+
+var rangeFilters = {
+  full:   function(f) { return f >= 25 && f <= 20000; },
+  low:    function(f) { return f >= 31.5 && f <= 250; },
+  mid:    function(f) { return f >= 250 && f <= 2000; },
+  himid:  function(f) { return f >= 1000 && f <= 8000; },
+  high:   function(f) { return f >= 4000 && f <= 16000; }
+};
+
+var ses = {
+  range: "full",
+  gainMag: 12,
+  mode: "boost",
+  filterType: "peaking",
+  source: "pink",
+  volume: 0.55,
+  trials: 0,
+  hits: 0,
+  streak: 0,
+  best: 0,
+  history: [],
+  bandStats: {},
+  scenarioRecords: [],
+  currentTarget: null,
+  currentGainSign: 1,
+  currentScenarioStart: 0,
+  isPlaying: false,
+  revealed: false,
+  answered: false,
+  questionLive: false,
+  scenarioIdx: 0,
+  sessionDone: false,
+  autoTimer: null,
+  bypassEq: false,
+  omittedFreqs: [31.5],
+  adaptiveBias: false,
+  blindAB: false,
+  warmupEnabled: false,
+  warmupActive: false,
+  warmupIdx: 0,
+  user: { firstName: "", lastName: "", email: "" },
+  sessionStartedAt: null,
+  sessionEndedAt: null
+};
+
+function getActiveFreqList() {
+  var raw = freqOctave;
+  var fn = rangeFilters[ses.range];
+  var out = [];
+  for (var i = 0; i < raw.length; i++) {
+    if (fn(raw[i]) && ses.omittedFreqs.indexOf(raw[i]) === -1) out.push(raw[i]);
+  }
+  return out;
+}
+
+function getDisplayFreqList() {
+  var raw = freqOctave;
+  var fn = rangeFilters[ses.range];
+  var out = [];
+  for (var k = 0; k < raw.length; k++) {
+    if (fn(raw[k])) out.push(raw[k]);
+  }
+  return out;
+}
+
+function isOmitted(f) {
+  return ses.omittedFreqs.indexOf(f) >= 0;
+}
+
+function fmtFreq(f) {
+  if (f >= 1000) {
+    var v = f / 1000;
+    if (v === Math.floor(v)) return v + "k";
+    return v.toFixed(1) + "k";
+  }
+  if (f === Math.floor(f)) return String(f);
+  return f.toFixed(1);
+}
+
+function ensureContext() {
+  if (ctxAudio) return ctxAudio;
+  var Ctor = window.AudioContext || window.webkitAudioContext;
+  ctxAudio = new Ctor();
+  SR = ctxAudio.sampleRate;
+  return ctxAudio;
+}
+
+function buildGraph() {
+  var c = ensureContext();
+  if (filtNode) return;
+
+  masterGain = c.createGain();
+  masterGain.gain.value = ses.volume;
+  masterGain.connect(c.destination);
+
+  analyserNode = c.createAnalyser();
+  analyserNode.fftSize = 4096;
+  analyserNode.smoothingTimeConstant = 0.78;
+  analyserNode.connect(masterGain);
+
+  processedGain = c.createGain();
+  processedGain.gain.value = 1;
+  processedGain.connect(analyserNode);
+
+  bypassGain = c.createGain();
+  bypassGain.gain.value = 0;
+  bypassGain.connect(analyserNode);
+
+  filtNode = c.createBiquadFilter();
+  filtNode.type = "peaking";
+  filtNode.frequency.value = 1000;
+  filtNode.Q.value = Q_FIJO;
+  filtNode.gain.value = 0;
+  filtNode.connect(processedGain);
+
+  srcGain = c.createGain();
+  srcGain.gain.value = 1.0;
+  srcGain.connect(filtNode);
+  srcGain.connect(bypassGain);
+}
+
+function applyEqRouting(rampMs) {
+  if (!processedGain || !bypassGain || !ctxAudio) return;
+  var ramp = (rampMs || EQ_RAMP_DEFAULT_MS) / 1000;
+  var t = ctxAudio.currentTime;
+  if (ses.bypassEq) {
+    processedGain.gain.linearRampToValueAtTime(0, t + ramp);
+    bypassGain.gain.linearRampToValueAtTime(1, t + ramp);
+  } else {
+    processedGain.gain.linearRampToValueAtTime(1, t + ramp);
+    bypassGain.gain.linearRampToValueAtTime(0, t + ramp);
+  }
+}
+
+function generatePinkBuffer() {
+  var c = ensureContext();
+  var dur = 6;
+  var len = Math.floor(SR * dur);
+  var b = c.createBuffer(2, len, SR);
+  var ch;
+  for (ch = 0; ch < 2; ch++) {
+    var d = b.getChannelData(ch);
+    var b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    var n;
+    for (n = 0; n < len; n++) {
+      var w = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + w * 0.0555179;
+      b1 = 0.99332 * b1 + w * 0.0750759;
+      b2 = 0.96900 * b2 + w * 0.1538520;
+      b3 = 0.86650 * b3 + w * 0.3104856;
+      b4 = 0.55000 * b4 + w * 0.5329522;
+      b5 = -0.7616 * b5 - w * 0.0168980;
+      d[n] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
+      b6 = w * 0.115926;
+    }
+  }
+  pinkBuf = b;
+}
+
+function generateWhiteBuffer() {
+  var c = ensureContext();
+  var seconds = 5;
+  var total = Math.floor(SR * seconds);
+  var buf = c.createBuffer(2, total, SR);
+  for (var k = 0; k < 2; k++) {
+    var arr = buf.getChannelData(k);
+    for (var i = 0; i < total; i++) {
+      arr[i] = (Math.random() * 2 - 1) * 0.45;
+    }
+  }
+  whiteBuf = buf;
+}
+
+function paintKick(out, startSamp) {
+  var len = Math.floor(0.42 * SR);
+  var s;
+  for (s = 0; s < len; s++) {
+    var idx = Math.floor(startSamp) + s;
+    if (idx >= out.length) break;
+    var t = s / SR;
+    var freq = 55 + 180 * Math.exp(-t * 38);
+    var env = Math.exp(-t * 7.5);
+    var sig = Math.sin(2 * Math.PI * freq * t) * env * 0.85;
+    sig += Math.sin(2 * Math.PI * 90 * t) * Math.exp(-t * 22) * 0.18;
+    out[idx] += sig;
+  }
+}
+
+function paintSnare(target, pos) {
+  var dur = 0.28;
+  var nSamps = Math.floor(dur * SR);
+  for (var k = 0; k < nSamps; k++) {
+    var i = Math.floor(pos) + k;
+    if (i >= target.length) break;
+    var u = k / SR;
+    var noise = (Math.random() * 2 - 1) * Math.exp(-u * 16);
+    var tone = Math.sin(2 * Math.PI * 220 * u) * Math.exp(-u * 24) * 0.32;
+    var hi = (Math.random() * 2 - 1) * Math.exp(-u * 50) * 0.18;
+    target[i] += (noise * 0.45 + tone + hi) * 0.55;
+  }
+}
+
+function paintHat(d, sp) {
+  var n = Math.floor(0.07 * SR);
+  var i;
+  for (i = 0; i < n; i++) {
+    var pos = Math.floor(sp) + i;
+    if (pos >= d.length) break;
+    var x = i / SR;
+    var raw = (Math.random() * 2 - 1) * 0.7;
+    raw = raw * Math.exp(-x * 55);
+    var hf = (Math.random() * 2 - 1) * 0.5 * Math.exp(-x * 100);
+    d[pos] += (raw + hf) * 0.22;
+  }
+}
+
+function paintBassNote(d, freq, startSamp, lenSamp) {
+  var s;
+  for (s = 0; s < lenSamp; s++) {
+    var idx = startSamp + s;
+    if (idx >= d.length) break;
+    var t = s / SR;
+    var atk = 1 - Math.exp(-t * 120);
+    var rel = Math.exp(-t * 2.5);
+    var env = atk * rel;
+    var sig = Math.sin(2 * Math.PI * freq * t) * 0.5;
+    sig += Math.sin(2 * Math.PI * freq * 2 * t) * 0.18;
+    sig += Math.sin(2 * Math.PI * freq * 3 * t) * 0.07;
+    sig += (((freq * t) % 1) * 2 - 1) * 0.05;
+    d[idx] += sig * env * 0.42;
+  }
+}
+
+function paintPad(d, freq, startSamp, lenSamp) {
+  var i;
+  for (i = 0; i < lenSamp; i++) {
+    var idx = startSamp + i;
+    if (idx >= d.length) break;
+    var t = i / SR;
+    var atk = 1 - Math.exp(-t * 4);
+    var rel = Math.exp(-t * 0.6);
+    var env = atk * rel * 0.5;
+    var sig = Math.sin(2 * Math.PI * freq * t) * 0.4;
+    sig += Math.sin(2 * Math.PI * freq * 2.01 * t) * 0.25;
+    sig += Math.sin(2 * Math.PI * freq * 3.02 * t) * 0.13;
+    sig += Math.sin(2 * Math.PI * freq * 4.99 * t) * 0.08;
+    d[idx] += sig * env * 0.18;
+  }
+}
+
+function generateDrumBuffer() {
+  var c = ensureContext();
+  var bpm = 96;
+  var beatDur = 60 / bpm;
+  var bars = 4;
+  var loopDur = beatDur * 4 * bars;
+  var totalSamps = Math.floor(SR * loopDur);
+  var buf = c.createBuffer(2, totalSamps, SR);
+
+  var bassPattern = [55, 55, 73.42, 55, 65.41, 55, 73.42, 49];
+  var padNotes = [110, 164.81, 220, 261.63];
+  var bar;
+
+  for (var ch = 0; ch < 2; ch++) {
+    var d = buf.getChannelData(ch);
+
+    for (bar = 0; bar < bars; bar++) {
+      var barStart = bar * 4 * beatDur;
+      paintKick(d, (barStart + 0) * SR);
+      paintKick(d, (barStart + 2 * beatDur) * SR);
+      paintSnare(d, (barStart + 1 * beatDur) * SR);
+      paintSnare(d, (barStart + 3 * beatDur) * SR);
+      var ei;
+      for (ei = 0; ei < 8; ei++) {
+        paintHat(d, (barStart + ei * beatDur / 2) * SR);
+      }
+    }
+
+    for (bar = 0; bar < bars; bar++) {
+      for (var n = 0; n < 8; n++) {
+        var f = bassPattern[n];
+        var st = ((bar * 4) + n * 0.5) * beatDur;
+        var stSamp = Math.floor(st * SR);
+        var ln = Math.floor(beatDur * 0.5 * SR);
+        paintBassNote(d, f, stSamp, ln);
+      }
+    }
+
+    for (bar = 0; bar < bars; bar++) {
+      for (var pn = 0; pn < padNotes.length; pn++) {
+        var pf = padNotes[pn] * (1 + (ch === 0 ? -0.001 : 0.001));
+        var ps = (bar * 4 * beatDur) * SR;
+        var pl = Math.floor(beatDur * 4 * SR);
+        paintPad(d, pf, Math.floor(ps), pl);
+      }
+    }
+
+    for (var k = 0; k < d.length; k++) {
+      d[k] = Math.tanh(d[k] * 0.85) * 0.78;
+    }
+  }
+  drumBuf = buf;
+}
+
+function generateToneBuffer() {
+  var c = ensureContext();
+  var dur = 5;
+  var len = Math.floor(SR * dur);
+  var buf = c.createBuffer(2, len, SR);
+  var roots = [82.41, 110, 146.83, 196, 246.94, 329.63];
+  var harmCount = 14;
+  for (var ch = 0; ch < 2; ch++) {
+    var data = buf.getChannelData(ch);
+    var i;
+    for (i = 0; i < len; i++) {
+      var t = i / SR;
+      var sample = 0;
+      var r;
+      for (r = 0; r < roots.length; r++) {
+        var rootF = roots[r] * (1 + (ch === 0 ? -0.0008 : 0.0008));
+        var h;
+        for (h = 1; h <= harmCount; h++) {
+          var amp = 1 / (h * h * 0.55 + 1);
+          var det = (Math.sin(t * 0.4 + r * 1.3 + h * 0.7) * 0.0015);
+          sample += Math.sin(2 * Math.PI * rootF * h * (1 + det) * t) * amp * 0.07;
+        }
+      }
+      var fade = Math.min(t * 4, 1);
+      var trail = Math.min((dur - t) * 4, 1);
+      data[i] = sample * fade * trail;
+    }
+  }
+  toneBuf = buf;
+}
+
+function pickSourceBuffer() {
+  if (ses.source === "pink") {
+    if (!pinkBuf) { showToast("Generando Ruido rosa…"); generatePinkBuffer(); }
+    return pinkBuf;
+  }
+  if (ses.source === "white") {
+    if (!whiteBuf) generateWhiteBuffer();
+    return whiteBuf;
+  }
+  if (ses.source === "drum") {
+    if (!drumBuf) { showToast("Generando Secuencia rítmica…"); generateDrumBuffer(); }
+    return drumBuf;
+  }
+  if (ses.source === "tone") {
+    if (!toneBuf) { showToast("Generando Señal compleja…"); generateToneBuffer(); }
+    return toneBuf;
+  }
+  if (ses.source === "upload") {
+    return uploadBuf;
+  }
+  return null;
+}
+
+function startSource() {
+  var c = ensureContext();
+  buildGraph();
+
+  if (srcNode) {
+    try { srcNode.stop(0); } catch (e) {}
+    try { srcNode.disconnect(); } catch (e) {}
+    srcNode = null;
+  }
+
+  var theBuf = pickSourceBuffer();
+  if (!theBuf) {
+    showToast("Cargá un archivo de audio primero");
+    return false;
+  }
+
+  srcNode = c.createBufferSource();
+  srcNode.buffer = theBuf;
+  srcNode.loop = true;
+  srcNode.connect(srcGain);
+  srcNode.start(0);
+  return true;
+}
+
+function stopSource() {
+  if (srcNode) {
+    try { srcNode.stop(0); } catch (e) {}
+    try { srcNode.disconnect(); } catch (e) {}
+    srcNode = null;
+  }
+}
+
+function startAutoTimerBar(durMs) {
+  var bar = document.getElementById("autoTimerBar");
+  if (!bar) return;
+  var fill = bar.querySelector(".fill");
+  fill.style.transition = "none";
+  fill.style.width = "100%";
+  bar.classList.add("active");
+  void fill.offsetWidth;
+  fill.style.transition = "width " + durMs + "ms linear";
+  fill.style.width = "0%";
+}
+
+function stopAutoTimerBar() {
+  var bar = document.getElementById("autoTimerBar");
+  if (!bar) return;
+  var fill = bar.querySelector(".fill");
+  fill.style.transition = "none";
+  fill.style.width = "0%";
+  bar.classList.remove("active");
+}
+
+function startBlindABLoop() {
+  if (blindABInterval) { clearInterval(blindABInterval); blindABInterval = null; }
+  blindABInterval = setInterval(function() {
+    if (!ses.questionLive || ses.answered || ses.revealed || ses.sessionDone || !ses.isPlaying) return;
+    ses.bypassEq = !ses.bypassEq;
+    applyEqRouting(BLIND_AB_CROSSFADE_MS);
+  }, BLIND_AB_INTERVAL_MS);
+}
+
+function stopBlindABLoop() {
+  if (blindABInterval) {
+    clearInterval(blindABInterval);
+    blindABInterval = null;
+  }
+}
+
+function startCalibracion(ev) {
+  if (ev && ev.preventDefault) ev.preventDefault();
+  if (calibActive) return;
+
+  if (ses.isPlaying) {
+    showToast("Pausá la sesión primero para usar la demo");
+    return;
+  }
+  if (ses.questionLive && !ses.sessionDone) {
+    if (ses.sessionStartedAt && !ses.sessionDone) {
+      showToast("Disponible solo fuera del entrenamiento activo");
+      return;
+    }
+  }
+
+  ensureContext();
+  resumeContextIfNeeded();
+  buildGraph();
+
+  if (filtNode) {
+    savedFiltState = {
+      freq: filtNode.frequency.value,
+      q: filtNode.Q.value,
+      gain: filtNode.gain.value,
+      type: filtNode.type
+    };
+  }
+
+  var t = ctxAudio.currentTime;
+  filtNode.type = "peaking";
+  filtNode.frequency.cancelScheduledValues(t);
+  filtNode.Q.cancelScheduledValues(t);
+  filtNode.gain.cancelScheduledValues(t);
+  filtNode.frequency.setValueAtTime(1000, t);
+  filtNode.Q.setValueAtTime(Q_FIJO, t);
+  filtNode.gain.setValueAtTime(0, t);
+
+  if (ses.bypassEq) {
+    ses.bypassEq = false;
+    applyEqRouting();
+    var nbtn = document.getElementById("btnNoEq");
+    if (nbtn) nbtn.classList.remove("armed", "sage");
+  }
+
+  var ok = startSource();
+  if (!ok) {
+    savedFiltState = null;
+    return;
+  }
+
+  calibActive = true;
+  calibStep = 0;
+  document.getElementById("btnCalib").classList.add("active");
+
+  if (!spectrumLoopActive) {
+    spectrumLoopActive = true;
+    requestAnimationFrame(spectrumLoop);
+  }
+
+  updateCalibStatus();
+  updateTrainHud();
+
+  calibInterval = setInterval(function() {
+    if (!calibActive) return;
+    calibStep = 1 - calibStep;
+    var ct = ctxAudio.currentTime;
+    var gainTarget = calibStep === 1 ? 12 : 0;
+    filtNode.gain.linearRampToValueAtTime(gainTarget, ct + (CALIB_FADE_MS / 1000));
+    updateCalibStatus();
+  }, CALIB_INTERVAL_MS);
+}
+
+function stopCalibracion() {
+  if (!calibActive) return;
+  calibActive = false;
+  if (calibInterval) {
+    clearInterval(calibInterval);
+    calibInterval = null;
+  }
+
+  if (filtNode && ctxAudio) {
+    var t = ctxAudio.currentTime;
+    filtNode.gain.cancelScheduledValues(t);
+    filtNode.gain.linearRampToValueAtTime(0, t + 0.12);
+  }
+
+  stopSource();
+  spectrumLoopActive = false;
+
+  if (savedFiltState) {
+    var snap = savedFiltState;
+    setTimeout(function() {
+      if (filtNode && ctxAudio && snap) {
+        var tt = ctxAudio.currentTime;
+        filtNode.type = snap.type;
+        filtNode.frequency.setValueAtTime(snap.freq, tt);
+        filtNode.Q.setValueAtTime(snap.q, tt);
+        filtNode.gain.setValueAtTime(snap.gain, tt);
+      }
+    }, SAVED_FILT_RESTORE_DELAY_MS);
+    savedFiltState = null;
+  }
+
+  document.getElementById("btnCalib").classList.remove("active");
+  updateCalibStatus();
+  updateTrainHud();
+}
+
+function updateCalibStatus() {
+  var st = document.getElementById("calibLabel");
+  if (!st) return;
+  if (!calibActive) {
+    st.textContent = "";
+    st.className = "cb-status";
+    return;
+  }
+  if (calibStep === 0) {
+    st.textContent = "▼ Referencia";
+    st.className = "cb-status ref";
+  } else {
+    st.textContent = "▲ +12 dB en 1 kHz";
+    st.className = "cb-status boost";
+  }
+}
+
+function loadHistoryRaw() {
+  try {
+    var s = localStorage.getItem("verio_history");
+    return s ? JSON.parse(s) : [];
+  } catch (e) {
+    console.warn("[loadHistoryRaw] no se pudo leer localStorage:", e);
+    return [];
+  }
+}
+
+function saveSessionToHistory() {
+  try {
+    var hist = loadHistoryRaw();
+    var recordsCopy = [];
+    var rci;
+    for (rci = 0; rci < ses.scenarioRecords.length; rci++) {
+      var rcs = ses.scenarioRecords[rci];
+      recordsCopy.push({
+        n: rcs.n,
+        target: rcs.target,
+        answer: rcs.answer,
+        hit: rcs.hit,
+        sign: rcs.sign,
+        gainDb: rcs.gainDb,
+        timeMs: rcs.timeMs,
+        distOct: rcs.distOct,
+        skipped: rcs.skipped
+      });
+    }
+    var bandStatsCopy = {};
+    var bsk;
+    for (bsk in ses.bandStats) {
+      if (ses.bandStats.hasOwnProperty(bsk)) {
+        bandStatsCopy[bsk] = { tries: ses.bandStats[bsk].tries, ok: ses.bandStats[bsk].ok };
+      }
+    }
+    var entry = {
+      date: ses.sessionEndedAt ? ses.sessionEndedAt.getTime() : Date.now(),
+      startedAt: ses.sessionStartedAt ? ses.sessionStartedAt.getTime() : null,
+      user: (ses.user.firstName + " " + ses.user.lastName).trim(),
+      email: ses.user.email || "",
+      hits: ses.hits,
+      trials: ses.trials,
+      pct: ses.trials > 0 ? Math.round(100 * ses.hits / ses.trials) : 0,
+      best: ses.best,
+      range: ses.range,
+      mode: ses.mode,
+      gainMag: ses.gainMag,
+      source: ses.source,
+      filterType: ses.filterType,
+      omittedFreqs: ses.omittedFreqs.slice(),
+      adaptive: ses.adaptiveBias,
+      blindAB: ses.blindAB,
+      warmup: ses.warmupEnabled,
+      history: ses.history.slice(),
+      records: recordsCopy,
+      bandStats: bandStatsCopy
+    };
+    hist.push(entry);
+    if (hist.length > HISTORY_MAX_ENTRIES) hist = hist.slice(hist.length - HISTORY_MAX_ENTRIES);
+    localStorage.setItem("verio_history", JSON.stringify(hist));
+  } catch (e) {
+    console.warn("[saveSessionToHistory] no se pudo escribir localStorage:", e);
+  }
+}
+
+function fmtHistDate(ts) {
+  var d = new Date(ts);
+  var dd = d.getDate();
+  var mm = d.getMonth() + 1;
+  var yy = d.getFullYear();
+  var hh = d.getHours();
+  var mn = d.getMinutes();
+  return (dd < 10 ? "0" : "") + dd + "/" +
+         (mm < 10 ? "0" : "") + mm + "/" + yy + " " +
+         (hh < 10 ? "0" : "") + hh + ":" +
+         (mn < 10 ? "0" : "") + mn;
+}
+
+function renderHistory() {
+  var box = document.getElementById("historyList");
+  if (!box) return;
+  var hist = loadHistoryRaw();
+  if (!hist.length) {
+    box.innerHTML = '<div class="hist-empty">Sin sesiones registradas todavía.</div>';
+    return;
+  }
+  var arr = [];
+  for (var hk = hist.length - 1; hk >= 0 && arr.length < HISTORY_LIST_DISPLAY; hk--) {
+    arr.push(hist[hk]);
+  }
+  var html = '';
+  for (var hi = 0; hi < arr.length; hi++) {
+    var e = arr[hi];
+    var spark = '<div class="hist-spark">';
+    var hh = e.history || [];
+    for (var hj = 0; hj < hh.length; hj++) {
+      spark += '<span class="hsp ' + hh[hj] + '"></span>';
+    }
+    if (hh.length === 0) {
+      spark += '<span class="hsp empty"></span>';
+    }
+    spark += '</div>';
+    var nameTxt = e.user || "—";
+    var modeIcon = "";
+    if (e.adaptive) modeIcon += '<span class="hist-tag" title="Adaptativo">A</span>';
+    if (e.blindAB) modeIcon += '<span class="hist-tag" title="Doble ciego">DC</span>';
+    if (e.warmup) modeIcon += '<span class="hist-tag" title="Calentamiento">C</span>';
+    html += '<div class="hist-row">' +
+      '<div class="hist-top">' +
+        '<span class="hist-date">' + fmtHistDate(e.date) + '</span>' +
+        '<span class="hist-pct">' + e.hits + '/' + (e.trials > 0 ? e.trials : 10) + ' · <strong>' + e.pct + '%</strong></span>' +
+      '</div>' +
+      '<div class="hist-name">' + nameTxt + ' ' + modeIcon + '</div>' +
+      spark +
+      '</div>';
+  }
+  box.innerHTML = html;
+}
+
+function clearHistory() {
+  try { localStorage.removeItem("verio_history"); }
+  catch (e) { console.warn("[clearHistory] no se pudo borrar:", e); }
+  renderHistory();
+}
+
+function pickTargetWithBias(arr) {
+  var weights = [];
+  var totalW = 0;
+  var bi;
+  for (bi = 0; bi < arr.length; bi++) {
+    var ff = arr[bi];
+    var w = 0.55;
+    var st = ses.bandStats[ff];
+    if (st && st.tries > 0) {
+      var fr = (st.tries - st.ok) / st.tries;
+      w = 0.25 + fr * 1.45;
+    }
+    weights.push(w);
+    totalW += w;
+  }
+  var r = Math.random() * totalW;
+  var acc = 0;
+  for (bi = 0; bi < arr.length; bi++) {
+    acc += weights[bi];
+    if (r < acc) return arr[bi];
+  }
+  return arr[arr.length - 1];
+}
+
+function rollNewQuestion(continuePlay) {
+  if (ses.autoTimer) { clearTimeout(ses.autoTimer); ses.autoTimer = null; }
+  stopAutoTimerBar();
+  stopBlindABLoop();
+
+  if (ses.warmupEnabled && ses.warmupIdx < 3) {
+    ses.warmupActive = true;
+    ses.warmupIdx += 1;
+  } else {
+    ses.warmupActive = false;
+    if (ses.scenarioIdx >= ESC_TOPE) {
+      finishSession();
+      return;
+    }
+  }
+
+  var arr = getActiveFreqList();
+  if (!arr.length) {
+    setFeedback("warn", "!", "No hay bandas activas. Desmarcá alguna casilla 'Omitir' para continuar.");
+    return;
+  }
+
+  if (ses.adaptiveBias && !ses.warmupActive && ses.scenarioRecords.length > 0) {
+    ses.currentTarget = pickTargetWithBias(arr);
+  } else {
+    var idx = Math.floor(Math.random() * arr.length);
+    ses.currentTarget = arr[idx];
+  }
+
+  if (ses.mode === "boost") ses.currentGainSign = 1;
+  else if (ses.mode === "cut") ses.currentGainSign = -1;
+  else ses.currentGainSign = Math.random() < 0.5 ? -1 : 1;
+
+  if (!ses.warmupActive) ses.scenarioIdx += 1;
+  ses.currentScenarioStart = Date.now();
+
+  if (filtNode) {
+    var c = ctxAudio;
+    var t0 = c.currentTime;
+    filtNode.type = ses.filterType;
+    filtNode.frequency.cancelScheduledValues(t0);
+    filtNode.Q.cancelScheduledValues(t0);
+    filtNode.gain.cancelScheduledValues(t0);
+    filtNode.frequency.setValueAtTime(ses.currentTarget, t0);
+    filtNode.Q.setValueAtTime(Q_FIJO, t0);
+    filtNode.gain.setValueAtTime(ses.currentGainSign * ses.gainMag, t0);
+  }
+
+  ses.revealed = false;
+  ses.answered = false;
+  ses.questionLive = true;
+  ses.bypassEq = false;
+  applyEqRouting();
+  var noEqBtn = document.getElementById("btnNoEq");
+  if (noEqBtn) noEqBtn.classList.remove("armed", "sage");
+
+  if (continuePlay && ctxAudio && filtNode && !ses.isPlaying) {
+    var ok = startSource();
+    if (ok) {
+      ses.isPlaying = true;
+      document.getElementById("btnPlay").classList.add("armed");
+      document.getElementById("btnPlayLabel").textContent = "Detener";
+      if (!spectrumLoopActive) {
+        spectrumLoopActive = true;
+        requestAnimationFrame(spectrumLoop);
+      }
+    }
+  }
+
+  if (ses.warmupActive) {
+    setFeedback("warn", "•", "Calentamiento <strong>" + ses.warmupIdx + " de 3</strong> · este escenario no cuenta en las estadísticas.");
+  } else if (ses.warmupEnabled && ses.scenarioIdx === 1) {
+    setFeedback("warn", "›", "¡A entrenar! <strong>Escenario 1 de " + ESC_TOPE + "</strong> · ahora sí cuenta en las estadísticas.");
+  }
+
+  if (ses.blindAB && ses.isPlaying && ses.questionLive) {
+    startBlindABLoop();
+  }
+
+  drawBode();
+  paintAnswerGrid();
+  if (!ses.warmupActive && !(ses.warmupEnabled && ses.scenarioIdx === 1)) resetFeedback();
+  updateTrainHud();
+  updateBodeLock();
+}
+
+function finishSession() {
+  ses.sessionDone = true;
+  ses.questionLive = false;
+  ses.revealed = false;
+  ses.warmupActive = false;
+  ses.sessionEndedAt = new Date();
+  stopAutoTimerBar();
+  stopBlindABLoop();
+  if (ses.isPlaying) {
+    stopSource();
+    ses.isPlaying = false;
+    spectrumLoopActive = false;
+    document.getElementById("btnPlay").classList.remove("armed");
+    document.getElementById("btnPlayLabel").textContent = "Reproducir";
+  }
+  var pct = ses.trials > 0 ? Math.round(100 * ses.hits / ses.trials) : 0;
+  var fb = document.getElementById("feedback");
+  fb.className = "feedback-box ok";
+  fb.innerHTML =
+    '<span class="fb-icon">✓</span>' +
+    '<div class="fb-text">' +
+    'Sesión finalizada · <strong>' + ses.hits + ' / ' + ESC_TOPE + '</strong> aciertos (' + pct + '%). ' +
+    'Presioná <strong>Nueva Secuencia</strong> para reiniciar.' +
+    '<div class="report-btns">' +
+      '<button class="pdf-btn" id="pdfDownloadBtn">Descargar PDF</button>' +
+      '<button class="xlsx-btn" id="xlsxDownloadBtn">Descargar Excel</button>' +
+    '</div>' +
+    '</div>';
+  var pBtn = document.getElementById("pdfDownloadBtn");
+  if (pBtn) pBtn.addEventListener("click", generatePDF);
+  var xBtn = document.getElementById("xlsxDownloadBtn");
+  if (xBtn) xBtn.addEventListener("click", generateXLSX);
+  paintAnswerGrid();
+  updateTrainHud();
+  updateBodeLock();
+  updateAdvancedStats();
+  saveSessionToHistory();
+  renderHistory();
+}
+
+function setSrcRange(idVal) {
+  ses.range = idVal;
+  paintAnswerGrid();
+  if (ses.questionLive) {
+    var list = getActiveFreqList();
+    var ok = false;
+    for (var i = 0; i < list.length; i++) if (list[i] === ses.currentTarget) ok = true;
+    if (!ok) rollNewQuestion();
+  }
+}
+
+function answerWith(freq) {
+  if (!ses.questionLive || ses.answered) return;
+  if (isOmitted(freq)) return;
+  ses.answered = true;
+  stopBlindABLoop();
+  if (ses.bypassEq) {
+    ses.bypassEq = false;
+    applyEqRouting();
+    var nbtn = document.getElementById("btnNoEq");
+    if (nbtn) nbtn.classList.remove("armed", "sage");
+  }
+
+  var hit = (freq === ses.currentTarget);
+
+  if (ses.warmupActive) {
+    ses.revealed = true;
+    if (hit) {
+      setFeedback("ok", "✓", "Calentamiento " + ses.warmupIdx + "/3 · Correcto · " + fmtFreq(ses.currentTarget) + " Hz.");
+    } else {
+      setFeedback("err", "✗", "Calentamiento " + ses.warmupIdx + "/3 · Incorrecto · era " + fmtFreq(ses.currentTarget) + " Hz.");
+    }
+    updateBodeLock();
+    drawBode();
+    paintAnswerGrid(freq);
+    updateTrainHud();
+    if (ses.autoTimer) clearTimeout(ses.autoTimer);
+    startAutoTimerBar(AUTO_TIMER_ANSWER_MS);
+    ses.autoTimer = setTimeout(function() {
+      ses.autoTimer = null;
+      rollNewQuestion(true);
+    }, AUTO_TIMER_ANSWER_MS);
+    return;
+  }
+
+  ses.trials += 1;
+  var elapsed = Date.now() - ses.currentScenarioStart;
+  var distOct = Math.abs(Math.log2(freq / ses.currentTarget));
+
+  if (!ses.bandStats[ses.currentTarget]) ses.bandStats[ses.currentTarget] = { tries: 0, ok: 0 };
+  ses.bandStats[ses.currentTarget].tries += 1;
+
+  var rec = {
+    n: ses.scenarioIdx,
+    target: ses.currentTarget,
+    answer: freq,
+    hit: hit,
+    sign: ses.currentGainSign,
+    gainDb: ses.currentGainSign * ses.gainMag,
+    timeMs: elapsed,
+    distOct: distOct,
+    skipped: false
+  };
+  ses.scenarioRecords.push(rec);
+
+  if (hit) {
+    ses.bandStats[ses.currentTarget].ok += 1;
+    ses.hits += 1;
+    ses.streak += 1;
+    if (ses.streak > ses.best) ses.best = ses.streak;
+    ses.history.push("hit");
+    setFeedback("ok", "✓", "Correcto · " + fmtFreq(ses.currentTarget) + " Hz con " + (ses.currentGainSign > 0 ? "+" : "−") + ses.gainMag + " dB.");
+  } else {
+    ses.streak = 0;
+    ses.history.push("miss");
+    var dist = freqDistanceLabel(freq, ses.currentTarget);
+    setFeedback("err", "✗", "Incorrecto. Tu respuesta: " + fmtFreq(freq) + " Hz · Correcta: " + fmtFreq(ses.currentTarget) + " Hz (" + dist + ").");
+  }
+  ses.revealed = true;
+  notifyAll();
+  updateBodeLock();
+  drawBode();
+  paintAnswerGrid(freq);
+
+  if (ses.autoTimer) clearTimeout(ses.autoTimer);
+  startAutoTimerBar(AUTO_TIMER_ANSWER_MS);
+  ses.autoTimer = setTimeout(function() {
+    ses.autoTimer = null;
+    rollNewQuestion(true);
+  }, AUTO_TIMER_ANSWER_MS);
+}
+
+function freqDistanceLabel(answer, target) {
+  if (answer === target) return "exacto";
+  var arr = getActiveFreqList();
+  var ai = -1, ti = -1;
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i] === answer) ai = i;
+    if (arr[i] === target) ti = i;
+  }
+  if (ai < 0 || ti < 0) {
+    var oct = Math.log2(answer / target);
+    return Math.abs(oct).toFixed(2) + " octavas de error";
+  }
+  var d = Math.abs(ai - ti);
+  return d + (d === 1 ? " octava" : " octavas") + " de distancia";
+}
+
+function paintAnswerGrid(answeredFreq) {
+  var grid = document.getElementById("answerGrid");
+  grid.className = "answer-grid octave";
+  grid.innerHTML = "";
+  var arr = getDisplayFreqList();
+  var k;
+  for (k = 0; k < arr.length; k++) {
+    var f = arr[k];
+    var cell = document.createElement("div");
+    cell.className = "freq-cell";
+
+    var btn = document.createElement("button");
+    btn.className = "freq-btn";
+    var lbl = document.createElement("span");
+    lbl.className = "lbl";
+    lbl.textContent = fmtFreq(f);
+    var unit = document.createElement("span");
+    unit.className = "unit";
+    unit.textContent = "Hz";
+    btn.appendChild(lbl);
+    btn.appendChild(unit);
+
+    var omitted = isOmitted(f);
+    if (omitted) btn.classList.add("omitted");
+
+    if (omitted || !ses.questionLive || ses.sessionDone) {
+      btn.disabled = true;
+      if (!omitted && !ses.questionLive) btn.style.opacity = "0.55";
+    } else if (ses.answered) {
+      btn.disabled = true;
+      if (f === ses.currentTarget) {
+        btn.classList.add(answeredFreq === f ? "correct" : "target-marker");
+      } else if (answeredFreq === f) {
+        btn.classList.add("wrong");
+      } else {
+        btn.classList.add("miss");
+      }
+    } else if (ses.revealed && f === ses.currentTarget) {
+      btn.classList.add("target-marker");
+      btn.disabled = true;
+    } else {
+      (function(freqClick) {
+        btn.addEventListener("click", function() { answerWith(freqClick); });
+      })(f);
+    }
+
+    cell.appendChild(btn);
+
+    var omitWrap = document.createElement("label");
+    omitWrap.className = "omit-label";
+    omitWrap.title = "Excluir esta banda del sorteo";
+    var cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = omitted;
+    cb.setAttribute("data-freq", String(f));
+    (function(freqCb) {
+      cb.addEventListener("change", function(ev) {
+        toggleOmit(freqCb, ev.target.checked);
+      });
+    })(f);
+    var cbTxt = document.createElement("span");
+    cbTxt.textContent = "Omitir";
+    omitWrap.appendChild(cb);
+    omitWrap.appendChild(cbTxt);
+    cell.appendChild(omitWrap);
+
+    grid.appendChild(cell);
+  }
+}
+
+function toggleOmit(freqVal, isChecked) {
+  var idx = ses.omittedFreqs.indexOf(freqVal);
+  if (isChecked && idx < 0) ses.omittedFreqs.push(freqVal);
+  if (!isChecked && idx >= 0) ses.omittedFreqs.splice(idx, 1);
+
+  if (ses.questionLive && !ses.answered && ses.currentTarget === freqVal && isChecked) {
+    rollNewQuestion(ses.isPlaying);
+    return;
+  }
+  paintAnswerGrid();
+}
+
+function setFeedback(kind, icon, text) {
+  var el = document.getElementById("feedback");
+  el.className = "feedback-box";
+  if (kind === "ok") el.classList.add("ok");
+  else if (kind === "err") el.classList.add("err");
+  else if (kind === "warn") el.classList.add("warn");
+  el.querySelector(".fb-icon").textContent = icon;
+  el.querySelector(".fb-text").innerHTML = text;
+}
+
+function resetFeedback() {
+  var el = document.getElementById("feedback");
+  el.className = "feedback-box";
+  el.querySelector(".fb-icon").textContent = "›";
+  el.querySelector(".fb-text").innerHTML = "Pregunta activa. Escuchá y elegí una banda.";
+}
+
+function updateScoreHud() {
+  document.getElementById("statHits").textContent = ses.hits;
+  document.getElementById("statTotal").textContent = ses.trials;
+  var pct = ses.trials > 0 ? Math.round(100 * ses.hits / ses.trials) : 0;
+  document.getElementById("statPct").textContent = pct + "%";
+  document.getElementById("statStreak").textContent = ses.streak;
+  document.getElementById("statBest").textContent = ses.best;
+}
+
+function updateTrainHud() {
+  var stEl = document.getElementById("trainStatus");
+  var stTxt = ses.isPlaying ? "Reproduciendo" : "Detenido";
+  if (ses.isPlaying && ses.bypassEq && !ses.blindAB) stTxt = "Sin Eq";
+  if (calibActive) stTxt = "Demo · referencia ↔ +12 dB";
+  if (ses.sessionDone) stTxt = "Sesión finalizada";
+  stEl.innerHTML =
+    '<span class="indicator-dot ' + (ses.isPlaying || calibActive ? "live" : "") + '" id="liveDot"></span>' + stTxt;
+
+  var scEl = document.getElementById("trainScenario");
+  if (scEl) {
+    if (ses.sessionDone) {
+      scEl.textContent = ESC_TOPE + " / " + ESC_TOPE;
+    } else if (ses.warmupActive) {
+      scEl.textContent = "Calent. " + ses.warmupIdx + " / 3";
+    } else if (ses.scenarioIdx > 0) {
+      scEl.textContent = ses.scenarioIdx + " / " + ESC_TOPE;
+    } else {
+      scEl.textContent = "— / " + ESC_TOPE;
+    }
+  }
+
+  document.getElementById("trainFreq").textContent = ses.revealed ? (fmtFreq(ses.currentTarget) + " Hz") : "— Hz";
+  document.getElementById("trainGain").textContent = ses.revealed ? ((ses.currentGainSign > 0 ? "+" : "−") + ses.gainMag + " dB") : "— dB";
+}
+
+function updateBodeLock() {
+  var w = document.getElementById("bodeWrap");
+  if (ses.revealed) {
+    w.classList.remove("locked");
+    w.classList.add("unlocked");
+  } else {
+    w.classList.add("locked");
+    w.classList.remove("unlocked");
+  }
+}
+
+function updateHistoryStrip() {
+  var el = document.getElementById("historyStrip");
+  el.innerHTML = "";
+  var lim = ses.history.slice(-50);
+  for (var i = 0; i < lim.length; i++) {
+    var d = document.createElement("span");
+    d.className = "dot " + lim[i];
+    el.appendChild(d);
+  }
+}
+
+function updateBandStats() {
+  var el = document.getElementById("bandStats");
+  el.innerHTML = "";
+  var keys = Object.keys(ses.bandStats);
+  keys.sort(function(a, b) { return parseFloat(a) - parseFloat(b); });
+  for (var n = 0; n < keys.length; n++) {
+    var f = keys[n];
+    var s = ses.bandStats[f];
+    var pct = Math.round(100 * s.ok / s.tries);
+    var row = document.createElement("div");
+    row.className = "band-stat-row";
+    row.innerHTML =
+      '<span class="bs-freq">' + fmtFreq(parseFloat(f)) + ' Hz</span>' +
+      '<span class="bs-bar"><span class="bs-fill ' + (pct < 50 ? "bad" : "") + '" style="width:' + pct + '%"></span></span>' +
+      '<span class="bs-pct">' + pct + '%</span>';
+    el.appendChild(row);
+  }
+}
+
+function freqToX(f, w) {
+  var lf = Math.log10(f);
+  var lo = Math.log10(20);
+  var hi = Math.log10(20000);
+  return ((lf - lo) / (hi - lo)) * w;
+}
+
+function dbToY(db, h) {
+  var lo = -20, hi = 20;
+  return h - ((db - lo) / (hi - lo)) * h;
+}
+
+var bodeLayersReady = false;
+
+function buildBodeStaticLayers(svg, W, H) {
+  if (bodeLayersReady) return;
+
+  var defs = '<defs><linearGradient id="curveFill" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0%" stop-color="#B85847" stop-opacity="0.32"/>' +
+    '<stop offset="100%" stop-color="#B85847" stop-opacity="0"/>' +
+    '</linearGradient></defs>';
+
+  var gridG = '<g id="bodeGridG" class="grid">';
+  var fgrid = [20, 31.5, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+  var i;
+  for (i = 0; i < fgrid.length; i++) {
+    var x = freqToX(fgrid[i], W);
+    var isMain = [100, 1000, 10000].indexOf(fgrid[i]) >= 0;
+    gridG += '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + H + '" stroke="' + (isMain ? "rgba(95,74,44,0.32)" : "rgba(95,74,44,0.13)") + '" stroke-width="1" />';
+    gridG += '<text x="' + (x + 3) + '" y="' + (H - 4) + '" font-family="JetBrains Mono" font-size="10" fill="#8C7E6A">' + fmtFreq(fgrid[i]) + '</text>';
+  }
+  var dbgrid = [-18, -12, -6, 0, 6, 12, 18];
+  var k;
+  for (k = 0; k < dbgrid.length; k++) {
+    var y = dbToY(dbgrid[k], H);
+    var bold = dbgrid[k] === 0;
+    gridG += '<line x1="0" y1="' + y + '" x2="' + W + '" y2="' + y + '" stroke="' + (bold ? "rgba(95,74,44,0.4)" : "rgba(95,74,44,0.13)") + '" stroke-width="1"/>';
+    gridG += '<text x="4" y="' + (y - 3) + '" font-family="JetBrains Mono" font-size="10" fill="#8C7E6A">' + (dbgrid[k] > 0 ? "+" : "") + dbgrid[k] + ' dB</text>';
+  }
+  gridG += '</g>';
+
+  svg.innerHTML = defs + gridG + '<g id="bodeCurveG"></g><g id="bodeSpectrumG"></g>';
+  bodeLayersReady = true;
+}
+
+function paintBodeCurve(W, H) {
+  var curveG = document.getElementById("bodeCurveG");
+  if (!curveG) return;
+  if (!filtNode || !ses.questionLive) {
+    curveG.innerHTML = "";
+    return;
+  }
+
+  var nPts = 360;
+  var freqArr = new Float32Array(nPts);
+  var magArr = new Float32Array(nPts);
+  var phaseArr = new Float32Array(nPts);
+  var loL = Math.log10(20);
+  var hiL = Math.log10(20000);
+  var p;
+  for (p = 0; p < nPts; p++) {
+    var lg = loL + (hiL - loL) * (p / (nPts - 1));
+    freqArr[p] = Math.pow(10, lg);
+  }
+  filtNode.getFrequencyResponse(freqArr, magArr, phaseArr);
+
+  var path = "M ";
+  var fillPath = "M ";
+  var midY = dbToY(0, H);
+  for (p = 0; p < nPts; p++) {
+    var dB = 20 * Math.log10(magArr[p]);
+    if (!isFinite(dB)) dB = -100;
+    var xx = freqToX(freqArr[p], W);
+    var yy = dbToY(dB, H);
+    if (p === 0) {
+      path += xx + " " + yy;
+      fillPath += xx + " " + midY + " L " + xx + " " + yy;
+    } else {
+      path += " L " + xx + " " + yy;
+      fillPath += " L " + xx + " " + yy;
+    }
+  }
+  fillPath += " L " + freqToX(freqArr[nPts - 1], W) + " " + midY + " Z";
+
+  if (ses.revealed) {
+    var tx = freqToX(ses.currentTarget, W);
+    curveG.innerHTML =
+      '<path d="' + fillPath + '" fill="url(#curveFill)" />' +
+      '<path class="filter-curve" d="' + path + '" stroke="#B85847" stroke-width="2.4" fill="none" stroke-linejoin="round"/>' +
+      '<line x1="' + tx + '" y1="0" x2="' + tx + '" y2="' + H + '" stroke="#5F4A2C" stroke-width="1.2" stroke-dasharray="3 3"/>' +
+      '<circle cx="' + tx + '" cy="' + dbToY(ses.currentGainSign * ses.gainMag, H) + '" r="5" fill="#5F4A2C" stroke="#FAF4E8" stroke-width="2"/>';
+  } else {
+    curveG.innerHTML = "";
+  }
+}
+
+function paintBodeSpectrum(W, H) {
+  var specG = document.getElementById("bodeSpectrumG");
+  if (!specG) return;
+  if (!analyserNode) {
+    specG.innerHTML = "";
+    return;
+  }
+
+  var bins = analyserNode.frequencyBinCount;
+  var data = new Uint8Array(bins);
+  analyserNode.getByteFrequencyData(data);
+
+  var pts = [];
+  var lo = Math.log10(20);
+  var hi = Math.log10(20000);
+  var nyq = (ctxAudio ? ctxAudio.sampleRate : SR) / 2;
+  var sampleCount = 220;
+  var s;
+  for (s = 0; s < sampleCount; s++) {
+    var lg = lo + (hi - lo) * (s / (sampleCount - 1));
+    var f = Math.pow(10, lg);
+    var binIdx = Math.round((f / nyq) * bins);
+    if (binIdx >= bins) binIdx = bins - 1;
+    var v = data[binIdx] / 255;
+    var dB = -60 + v * 60;
+    var x = freqToX(f, W);
+    var y = dbToY(dB / 3, H);
+    if (y < 0) y = 0;
+    if (y > H) y = H;
+    pts.push([x, y]);
+  }
+
+  var path = "M " + pts[0][0] + " " + H;
+  var t;
+  for (t = 0; t < pts.length; t++) {
+    path += " L " + pts[t][0] + " " + pts[t][1];
+  }
+  path += " L " + pts[pts.length - 1][0] + " " + H + " Z";
+
+  specG.innerHTML = '<path d="' + path + '" fill="rgba(124, 144, 112, 0.25)" stroke="rgba(90, 110, 80, 0.55)" stroke-width="1"/>';
+}
+
+function drawBode() {
+  var svg = document.getElementById("bodeSvg");
+  var W = 800, H = 280;
+  buildBodeStaticLayers(svg, W, H);
+  paintBodeCurve(W, H);
+  paintBodeSpectrum(W, H);
+}
+
+var spectrumLoopActive = false;
+function drawSpectrum(svg, W, H) {
+  paintBodeSpectrum(W, H);
+}
+
+function spectrumLoop() {
+  if (!ses.isPlaying && !calibActive) {
+    spectrumLoopActive = false;
+    spectrumFrameCounter = 0;
+    return;
+  }
+  spectrumFrameCounter += 1;
+  if (spectrumFrameCounter >= SPECTRUM_FRAME_STRIDE) {
+    spectrumFrameCounter = 0;
+    drawBode();
+  }
+  requestAnimationFrame(spectrumLoop);
+}
+
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 2400);
+}
+
+function togglePlay() {
+  if (calibActive) {
+    stopCalibracion();
+    return;
+  }
+  ensureContext();
+  resumeContextIfNeeded();
+  if (ses.isPlaying) {
+    stopSource();
+    ses.isPlaying = false;
+    spectrumLoopActive = false;
+    stopBlindABLoop();
+    document.getElementById("btnPlay").classList.remove("armed");
+    document.getElementById("btnPlayLabel").textContent = "Reproducir";
+    updateTrainHud();
+    return;
+  }
+  if (ses.sessionDone) {
+    showToast("Sesión finalizada · presioná Nueva Secuencia");
+    return;
+  }
+  if (!ses.sessionStartedAt) {
+    showUserModal("start");
+    return;
+  }
+  if (!ses.questionLive) {
+    rollNewQuestion(false);
+  }
+  var ok = startSource();
+  if (!ok) return;
+  ses.isPlaying = true;
+  applyEqRouting();
+  document.getElementById("btnPlay").classList.add("armed");
+  document.getElementById("btnPlayLabel").textContent = "Detener";
+  if (ses.blindAB && ses.questionLive && !ses.answered && !ses.revealed) {
+    startBlindABLoop();
+  }
+  updateTrainHud();
+  if (!spectrumLoopActive) {
+    spectrumLoopActive = true;
+    requestAnimationFrame(spectrumLoop);
+  }
+}
+
+function toggleNoEq() {
+  if (!ses.questionLive || ses.sessionDone) return;
+  if (ses.blindAB) { showToast("Sin Eq desactivado en modo Doble Ciego"); return; }
+  ses.bypassEq = !ses.bypassEq;
+  applyEqRouting();
+  var b = document.getElementById("btnNoEq");
+  if (ses.bypassEq) b.classList.add("armed", "sage");
+  else b.classList.remove("armed", "sage");
+  updateTrainHud();
+}
+
+function reveal() {
+  if (!ses.questionLive) return;
+  ses.revealed = true;
+  updateBodeLock();
+  drawBode();
+  paintAnswerGrid();
+  updateTrainHud();
+  setFeedback("warn", "◐", "f₀ = <strong>" + fmtFreq(ses.currentTarget) + " Hz</strong> · " + (ses.currentGainSign > 0 ? "+" : "−") + ses.gainMag + " dB.");
+}
+
+function skipQ() {
+  if (ses.sessionDone) return;
+  stopBlindABLoop();
+
+  if (ses.isPlaying) {
+    stopSource();
+    ses.isPlaying = false;
+    spectrumLoopActive = false;
+    document.getElementById("btnPlay").classList.remove("armed");
+    document.getElementById("btnPlayLabel").textContent = "Reproducir";
+  }
+
+  if (ses.questionLive && !ses.answered && !ses.warmupActive) {
+    ses.trials += 1;
+    ses.streak = 0;
+    ses.history.push("skip");
+    if (!ses.bandStats[ses.currentTarget]) ses.bandStats[ses.currentTarget] = { tries: 0, ok: 0 };
+    ses.bandStats[ses.currentTarget].tries += 1;
+    ses.scenarioRecords.push({
+      n: ses.scenarioIdx,
+      target: ses.currentTarget,
+      answer: null,
+      hit: false,
+      sign: ses.currentGainSign,
+      gainDb: ses.currentGainSign * ses.gainMag,
+      timeMs: Date.now() - ses.currentScenarioStart,
+      distOct: 0,
+      skipped: true
+    });
+    setFeedback("warn", "→", "Saltada · era " + fmtFreq(ses.currentTarget) + " Hz.");
+    notifyAll();
+  } else if (ses.questionLive && !ses.answered && ses.warmupActive) {
+    setFeedback("warn", "→", "Calentamiento " + ses.warmupIdx + "/3 · saltada (era " + fmtFreq(ses.currentTarget) + " Hz).");
+  }
+
+  if (ses.autoTimer) clearTimeout(ses.autoTimer);
+  startAutoTimerBar(AUTO_TIMER_SKIP_MS);
+  ses.autoTimer = setTimeout(function() {
+    ses.autoTimer = null;
+    rollNewQuestion(true);
+    updateTrainHud();
+  }, AUTO_TIMER_SKIP_MS);
+}
+
+function newQuestion() {
+  if (ses.autoTimer) { clearTimeout(ses.autoTimer); ses.autoTimer = null; }
+  stopAutoTimerBar();
+  stopBlindABLoop();
+  if (ses.isPlaying) {
+    stopSource();
+    ses.isPlaying = false;
+    spectrumLoopActive = false;
+    document.getElementById("btnPlay").classList.remove("armed");
+    document.getElementById("btnPlayLabel").textContent = "Reproducir";
+  }
+  showUserModal("reset");
+}
+
+function performReset() {
+  stopBlindABLoop();
+  stopAutoTimerBar();
+  ses.scenarioIdx = 0;
+  ses.trials = 0;
+  ses.hits = 0;
+  ses.streak = 0;
+  ses.history = [];
+  ses.bandStats = {};
+  ses.scenarioRecords = [];
+  ses.sessionDone = false;
+  ses.questionLive = false;
+  ses.revealed = false;
+  ses.answered = false;
+  ses.bypassEq = false;
+  ses.warmupActive = false;
+  ses.warmupIdx = 0;
+  ses.sessionStartedAt = new Date();
+  ses.sessionEndedAt = null;
+  var nb = document.getElementById("btnNoEq");
+  if (nb) nb.classList.remove("armed", "sage");
+  updateScoreHud();
+  updateHistoryStrip();
+  updateBandStats();
+  updateLearningCurve();
+  updateAdvancedStats();
+  rollNewQuestion(false);
+}
+
+function loadUploadFile(file) {
+  var c = ensureContext();
+  var rd = new FileReader();
+  rd.onload = function(ev) {
+    c.decodeAudioData(ev.target.result, function(buf) {
+      uploadBuf = buf;
+      document.getElementById("fileName").textContent = "✓ " + file.name + " · " + buf.duration.toFixed(1) + "s · " + buf.numberOfChannels + "ch";
+      ses.source = "upload";
+      document.getElementById("srcSelect").value = "upload";
+      showToast("Archivo cargado");
+      if (ses.isPlaying) {
+        stopSource();
+        startSource();
+      }
+    }, function() {
+      showToast("No se pudo decodificar el archivo");
+    });
+  };
+  rd.readAsArrayBuffer(file);
+}
+
+function updateLearningCurve() {
+  var el = document.getElementById("learningCurve");
+  if (!el) return;
+  el.innerHTML = "";
+  var k;
+  for (k = 0; k < ESC_TOPE; k++) {
+    var c = document.createElement("div");
+    c.className = "lc-cell empty";
+    if (k < ses.history.length) {
+      c.className = "lc-cell " + ses.history[k];
+    }
+    el.appendChild(c);
+  }
+}
+
+function updateAdvancedStats() {
+  var box = document.getElementById("advStats");
+  if (!box) return;
+
+  var totalT = 0, n = 0;
+  var boostHit = 0, boostTry = 0, cutHit = 0, cutTry = 0;
+  var bestBand = null, worstBand = null;
+  var i;
+
+  for (i = 0; i < ses.scenarioRecords.length; i++) {
+    var r = ses.scenarioRecords[i];
+    if (!r.skipped) {
+      totalT += r.timeMs;
+      n += 1;
+    }
+    if (r.sign > 0) { boostTry += 1; if (r.hit) boostHit += 1; }
+    else { cutTry += 1; if (r.hit) cutHit += 1; }
+  }
+
+  var avgT = n > 0 ? (totalT / n / 1000).toFixed(1) : "—";
+
+  var keys = Object.keys(ses.bandStats);
+  var bestPct = -1, worstPct = 101;
+  for (i = 0; i < keys.length; i++) {
+    var st = ses.bandStats[keys[i]];
+    if (st.tries === 0) continue;
+    var p = 100 * st.ok / st.tries;
+    if (p > bestPct) { bestPct = p; bestBand = keys[i]; }
+    if (p < worstPct) { worstPct = p; worstBand = keys[i]; }
+  }
+
+  var html = "";
+  html += '<div class="adv-row"><span class="label">Tiempo medio resp.</span><span class="val">' + avgT + ' s</span></div>';
+  html += '<div class="adv-row"><span class="label">Mejor racha</span><span class="val">' + ses.best + '</span></div>';
+  html += '<div class="adv-row"><span class="label">Mejor banda</span><span class="val">' + (bestBand !== null ? fmtFreq(parseFloat(bestBand)) + ' Hz · ' + Math.round(bestPct) + '%' : '—') + '</span></div>';
+  html += '<div class="adv-row"><span class="label">Banda más débil</span><span class="val">' + (worstBand !== null && worstBand !== bestBand ? fmtFreq(parseFloat(worstBand)) + ' Hz · ' + Math.round(worstPct) + '%' : '—') + '</span></div>';
+  if (boostTry > 0) {
+    html += '<div class="adv-row"><span class="label">Aciertos amplif.</span><span class="val">' + boostHit + ' / ' + boostTry + '</span></div>';
+  }
+  if (cutTry > 0) {
+    html += '<div class="adv-row"><span class="label">Aciertos atenuac.</span><span class="val">' + cutHit + ' / ' + cutTry + '</span></div>';
+  }
+  box.innerHTML = html;
+
+  var dEl = document.getElementById("errDist");
+  if (!dEl) return;
+  var bk0 = 0, bk1 = 0, bk2 = 0, bk3 = 0;
+  for (i = 0; i < ses.scenarioRecords.length; i++) {
+    var rec = ses.scenarioRecords[i];
+    if (rec.skipped) continue;
+    if (rec.distOct < 0.1) bk0 += 1;
+    else if (rec.distOct < 1.1) bk1 += 1;
+    else if (rec.distOct < 2.1) bk2 += 1;
+    else bk3 += 1;
+  }
+  var totalRec = bk0 + bk1 + bk2 + bk3;
+  var dHtml = "";
+  function distRow(lbl, num, cls) {
+    var pct = totalRec > 0 ? Math.round(100 * num / totalRec) : 0;
+    return '<div class="dist-bar-row"><span class="lbl">' + lbl + '</span>' +
+           '<span class="br"><span class="fl ' + cls + '" style="width:' + pct + '%"></span></span>' +
+           '<span class="nm">' + num + '</span></div>';
+  }
+  dHtml += distRow("Exacto", bk0, "");
+  dHtml += distRow("1 octava", bk1, "warn");
+  dHtml += distRow("2 octavas", bk2, "warn");
+  dHtml += distRow("3+ oct.", bk3, "bad");
+  dEl.innerHTML = dHtml;
+}
+
+function fmtDuration(ms) {
+  var s = Math.floor(ms / 1000);
+  var m = Math.floor(s / 60);
+  s = s % 60;
+  return m + " min " + (s < 10 ? "0" : "") + s + " s";
+}
+
+function computeReportMetrics() {
+  var trecs = ses.scenarioRecords;
+  var ttot = 0, tn = 0;
+  var bHit = 0, bTry = 0, cHit = 0, cTry = 0;
+  var bk0 = 0, bk1 = 0, bk2 = 0, bk3 = 0, bkTotal = 0;
+  var rmi;
+  for (rmi = 0; rmi < trecs.length; rmi++) {
+    var rr = trecs[rmi];
+    if (!rr.skipped) { ttot += rr.timeMs; tn += 1; }
+    if (rr.sign > 0) { bTry += 1; if (rr.hit) bHit += 1; }
+    else { cTry += 1; if (rr.hit) cHit += 1; }
+    if (rr.skipped) continue;
+    bkTotal += 1;
+    if (rr.distOct < 0.1) bk0 += 1;
+    else if (rr.distOct < 1.1) bk1 += 1;
+    else if (rr.distOct < 2.1) bk2 += 1;
+    else bk3 += 1;
+  }
+
+  var bandKeys = Object.keys(ses.bandStats);
+  bandKeys.sort(function(a, b) { return parseFloat(a) - parseFloat(b); });
+  var bestB = null, worstB = null;
+  var bestPct = -1, worstPct = 101;
+  var rmk;
+  for (rmk = 0; rmk < bandKeys.length; rmk++) {
+    var stB = ses.bandStats[bandKeys[rmk]];
+    if (stB.tries === 0) continue;
+    var pp = 100 * stB.ok / stB.tries;
+    if (pp > bestPct) { bestPct = pp; bestB = bandKeys[rmk]; }
+    if (pp < worstPct) { worstPct = pp; worstB = bandKeys[rmk]; }
+  }
+
+  return {
+    pct: ses.trials > 0 ? Math.round(100 * ses.hits / ses.trials) : 0,
+    avgTimeMs: tn > 0 ? ttot / tn : 0,
+    avgTimeStr: tn > 0 ? (ttot / tn / 1000).toFixed(1) : "-",
+    boostHit: bHit, boostTry: bTry,
+    cutHit: cHit, cutTry: cTry,
+    bestBand: bestB, bestPct: bestPct,
+    worstBand: worstB, worstPct: worstPct,
+    distExact: bk0, distOne: bk1, distTwo: bk2, distMany: bk3, distTotal: bkTotal,
+    bandKeys: bandKeys
+  };
+}
+
+function reportConfigLabels() {
+  return {
+    range: { full: "Espectro completo", low: "Low (31.5-250 Hz)", mid: "Mid (250-2000 Hz)", himid: "Mid-High (1k-8k Hz)", high: "High (4k-16k Hz)" }[ses.range],
+    mode: { boost: "Amplificación", cut: "Atenuación", both: "Ambos" }[ses.mode],
+    source: { pink: "Ruido rosa", white: "Ruido blanco", drum: "Secuencia rítmica", tone: "Señal compleja", upload: "Archivo externo" }[ses.source],
+    filter: { peaking: "Paramétrico", lowshelf: "Low Shelf", highshelf: "High Shelf" }[ses.filterType]
+  };
+}
+
+function pdfNewCtx(jp) {
+  return { jp: jp, W: 210, MX: 16, y: 18 };
+}
+
+function pdfSection(ctx, title) {
+  var jp = ctx.jp;
+  jp.setDrawColor(220, 206, 176);
+  jp.line(ctx.MX, ctx.y, ctx.W - ctx.MX, ctx.y);
+  ctx.y += 7;
+  jp.setFont("helvetica", "bold");
+  jp.setFontSize(9);
+  jp.setTextColor(140, 126, 106);
+  jp.text(title, ctx.MX, ctx.y);
+  ctx.y += 6;
+}
+
+function pdfEnsureRoom(ctx, threshold) {
+  if (ctx.y > threshold) {
+    ctx.jp.addPage();
+    ctx.y = 20;
+  }
+}
+
+function pdfHeader(ctx) {
+  var jp = ctx.jp;
+  jp.setFont("helvetica", "bold");
+  jp.setFontSize(20);
+  jp.setTextColor(142, 63, 48);
+  jp.text("Mimetika", ctx.MX, ctx.y);
+  jp.setFont("helvetica", "normal");
+  jp.setFontSize(9);
+  jp.setTextColor(140, 126, 106);
+  jp.text("Herramientas de Representación", ctx.MX + 19, ctx.y);
+  ctx.y += 4;
+  jp.setDrawColor(184, 88, 71);
+  jp.setLineWidth(0.6);
+  jp.line(ctx.MX, ctx.y, ctx.MX + 24, ctx.y);
+  ctx.y += 9;
+
+  jp.setFont("helvetica", "bold");
+  jp.setFontSize(14);
+  jp.setTextColor(42, 33, 20);
+  jp.text("Reporte de Entrenamiento Auditivo", ctx.MX, ctx.y);
+  ctx.y += 5;
+  jp.setFont("helvetica", "normal");
+  jp.setFontSize(10);
+  jp.setTextColor(90, 77, 58);
+  jp.text("Identificación de frecuencias · Ecualización", ctx.MX, ctx.y);
+  ctx.y += 9;
+}
+
+function pdfParticipant(ctx) {
+  var jp = ctx.jp;
+  jp.setDrawColor(220, 206, 176);
+  jp.line(ctx.MX, ctx.y, ctx.W - ctx.MX, ctx.y);
+  ctx.y += 7;
+
+  jp.setFontSize(9);
+  jp.setTextColor(140, 126, 106);
+  jp.text("PARTICIPANTE", ctx.MX, ctx.y);
+  ctx.y += 5;
+  jp.setFontSize(11);
+  jp.setTextColor(42, 33, 20);
+  jp.text((ses.user.firstName + " " + ses.user.lastName).trim() || "-", ctx.MX, ctx.y);
+  ctx.y += 5;
+  jp.setFontSize(10);
+  jp.setTextColor(90, 77, 58);
+  jp.text(ses.user.email || "-", ctx.MX, ctx.y);
+  ctx.y += 9;
+}
+
+function pdfSessionMeta(ctx) {
+  var jp = ctx.jp;
+  jp.setDrawColor(220, 206, 176);
+  jp.line(ctx.MX, ctx.y, ctx.W - ctx.MX, ctx.y);
+  ctx.y += 7;
+
+  var startStr = ses.sessionStartedAt ? ses.sessionStartedAt.toLocaleString("es-AR") : "-";
+  var endStr = ses.sessionEndedAt ? ses.sessionEndedAt.toLocaleString("es-AR") : "-";
+  var dur = (ses.sessionStartedAt && ses.sessionEndedAt) ? fmtDuration(ses.sessionEndedAt - ses.sessionStartedAt) : "-";
+
+  jp.setFontSize(9);
+  jp.setTextColor(140, 126, 106);
+  jp.text("INICIO", ctx.MX, ctx.y);
+  jp.text("CIERRE", ctx.MX + 60, ctx.y);
+  jp.text("DURACIÓN", ctx.MX + 120, ctx.y);
+  ctx.y += 5;
+  jp.setFontSize(10);
+  jp.setTextColor(42, 33, 20);
+  jp.text(startStr, ctx.MX, ctx.y);
+  jp.text(endStr, ctx.MX + 60, ctx.y);
+  jp.text(dur, ctx.MX + 120, ctx.y);
+  ctx.y += 9;
+}
+
+function pdfConfig(ctx) {
+  var jp = ctx.jp;
+  pdfSection(ctx, "CONFIGURACIÓN");
+  ctx.y -= 1;
+  var labels = reportConfigLabels();
+  jp.setFont("helvetica", "normal");
+  jp.setFontSize(10);
+  jp.setTextColor(42, 33, 20);
+  jp.text("Región: " + labels.range, ctx.MX, ctx.y);
+  jp.text("Modo: " + labels.mode, ctx.MX + 95, ctx.y);
+  ctx.y += 5;
+  jp.text("Tipo: " + labels.filter, ctx.MX, ctx.y);
+  jp.text("Ganancia: +/-" + ses.gainMag + " dB", ctx.MX + 95, ctx.y);
+  ctx.y += 5;
+  jp.text("Ancho: 1 octava (Q " + Q_FIJO.toFixed(3) + ")", ctx.MX, ctx.y);
+  jp.text("Señal: " + labels.source, ctx.MX + 95, ctx.y);
+  ctx.y += 5;
+  if (ses.omittedFreqs.length > 0) {
+    var omitTxt = "Omitidas: ";
+    var oi;
+    for (oi = 0; oi < ses.omittedFreqs.length; oi++) {
+      omitTxt += fmtFreq(ses.omittedFreqs[oi]) + " Hz";
+      if (oi < ses.omittedFreqs.length - 1) omitTxt += ", ";
+    }
+    jp.text(omitTxt, ctx.MX, ctx.y);
+    ctx.y += 5;
+  }
+  jp.text("Entrenamiento Adaptativo: " + (ses.adaptiveBias ? "Activo" : "Uniforme"), ctx.MX, ctx.y);
+  jp.text("Doble Ciego: " + (ses.blindAB ? "Activo" : "Inactivo"), ctx.MX + 95, ctx.y);
+  ctx.y += 5;
+  jp.text("Calentamiento: " + (ses.warmupEnabled ? "Activo (3 escenarios previos)" : "Inactivo"), ctx.MX, ctx.y);
+  ctx.y += 9;
+}
+
+function pdfGlobalResult(ctx, mx) {
+  var jp = ctx.jp;
+  pdfSection(ctx, "RESULTADO GLOBAL");
+
+  jp.setFont("helvetica", "bold");
+  jp.setFontSize(28);
+  jp.setTextColor(184, 88, 71);
+  jp.text(ses.hits + " / " + ESC_TOPE, ctx.MX, ctx.y + 6);
+  jp.setFont("helvetica", "normal");
+  jp.setFontSize(11);
+  jp.setTextColor(90, 77, 58);
+  jp.text(mx.pct + "% de acierto", ctx.MX + 38, ctx.y + 6);
+  jp.text("Mejor racha: " + ses.best, ctx.MX + 90, ctx.y + 6);
+  jp.text("Tiempo medio: " + mx.avgTimeStr + " s", ctx.MX + 140, ctx.y + 6);
+
+  ctx.y += 15;
+}
+
+function pdfScenarioTable(ctx) {
+  var jp = ctx.jp;
+  jp.setDrawColor(220, 206, 176);
+  jp.line(ctx.MX, ctx.y, ctx.W - ctx.MX, ctx.y);
+  ctx.y += 7;
+
+  jp.setFont("helvetica", "bold");
+  jp.setFontSize(9);
+  jp.setTextColor(140, 126, 106);
+  jp.text("DETALLE POR ESCENARIO", ctx.MX, ctx.y);
+  ctx.y += 6;
+
+  jp.setFont("helvetica", "bold");
+  jp.setFontSize(8);
+  jp.setTextColor(90, 77, 58);
+  jp.text("#", ctx.MX, ctx.y);
+  jp.text("Banda objetivo", ctx.MX + 8, ctx.y);
+  jp.text("Dirección", ctx.MX + 50, ctx.y);
+  jp.text("Respuesta", ctx.MX + 80, ctx.y);
+  jp.text("Resultado", ctx.MX + 110, ctx.y);
+  jp.text("Distancia", ctx.MX + 138, ctx.y);
+  jp.text("Tiempo", ctx.MX + 168, ctx.y);
+  ctx.y += 2;
+  jp.setDrawColor(220, 206, 176);
+  jp.line(ctx.MX, ctx.y, ctx.W - ctx.MX, ctx.y);
+  ctx.y += 4;
+
+  jp.setFont("helvetica", "normal");
+  jp.setFontSize(9);
+  var rj;
+  for (rj = 0; rj < ses.scenarioRecords.length; rj++) {
+    var rr = ses.scenarioRecords[rj];
+    pdfEnsureRoom(ctx, 270);
+    jp.setTextColor(42, 33, 20);
+    jp.text(String(rr.n), ctx.MX, ctx.y);
+    jp.text(fmtFreq(rr.target) + " Hz", ctx.MX + 8, ctx.y);
+    jp.text((rr.sign > 0 ? "+" : "-") + Math.abs(rr.gainDb) + " dB", ctx.MX + 50, ctx.y);
+    if (rr.skipped) {
+      jp.setTextColor(140, 126, 106);
+      jp.text("- saltada -", ctx.MX + 80, ctx.y);
+      jp.setTextColor(176, 122, 44);
+      jp.text("Skip", ctx.MX + 110, ctx.y);
+    } else {
+      jp.setTextColor(42, 33, 20);
+      jp.text(fmtFreq(rr.answer) + " Hz", ctx.MX + 80, ctx.y);
+      if (rr.hit) {
+        jp.setTextColor(90, 110, 80);
+        jp.text("Acierto", ctx.MX + 110, ctx.y);
+      } else {
+        jp.setTextColor(142, 63, 48);
+        jp.text("Error", ctx.MX + 110, ctx.y);
+      }
+      jp.setTextColor(42, 33, 20);
+      jp.text(rr.distOct.toFixed(2) + " oct", ctx.MX + 138, ctx.y);
+    }
+    jp.setTextColor(42, 33, 20);
+    jp.text((rr.timeMs / 1000).toFixed(1) + " s", ctx.MX + 168, ctx.y);
+    ctx.y += 5;
+  }
+}
+
+function pdfBandPerformance(ctx, mx) {
+  var jp = ctx.jp;
+  pdfEnsureRoom(ctx, 250);
+  ctx.y += 5;
+  jp.setDrawColor(220, 206, 176);
+  jp.line(ctx.MX, ctx.y, ctx.W - ctx.MX, ctx.y);
+  ctx.y += 7;
+
+  jp.setFont("helvetica", "bold");
+  jp.setFontSize(9);
+  jp.setTextColor(140, 126, 106);
+  jp.text("DESEMPEÑO POR BANDA", ctx.MX, ctx.y);
+  ctx.y += 6;
+
+  jp.setFont("helvetica", "normal");
+  jp.setFontSize(9);
+  var bj;
+  for (bj = 0; bj < mx.bandKeys.length; bj++) {
+    pdfEnsureRoom(ctx, 275);
+    var f = mx.bandKeys[bj];
+    var s = ses.bandStats[f];
+    var bp = Math.round(100 * s.ok / s.tries);
+    jp.setTextColor(42, 33, 20);
+    jp.text(fmtFreq(parseFloat(f)) + " Hz", ctx.MX, ctx.y);
+    jp.text(s.ok + " / " + s.tries, ctx.MX + 30, ctx.y);
+    jp.setDrawColor(220, 206, 176);
+    jp.setFillColor(236, 224, 203);
+    jp.rect(ctx.MX + 56, ctx.y - 3, 80, 3, "F");
+    if (bp >= 50) jp.setFillColor(124, 144, 112);
+    else jp.setFillColor(184, 88, 71);
+    jp.rect(ctx.MX + 56, ctx.y - 3, 80 * bp / 100, 3, "F");
+    jp.setTextColor(42, 33, 20);
+    jp.text(bp + "%", ctx.MX + 142, ctx.y);
+    ctx.y += 6;
+  }
+}
+
+function pdfAdvancedMetrics(ctx, mx) {
+  var jp = ctx.jp;
+  pdfEnsureRoom(ctx, 240);
+  ctx.y += 4;
+  jp.setDrawColor(220, 206, 176);
+  jp.line(ctx.MX, ctx.y, ctx.W - ctx.MX, ctx.y);
+  ctx.y += 7;
+
+  jp.setFont("helvetica", "bold");
+  jp.setFontSize(9);
+  jp.setTextColor(140, 126, 106);
+  jp.text("MÉTRICAS AVANZADAS", ctx.MX, ctx.y);
+  ctx.y += 6;
+
+  jp.setFont("helvetica", "normal");
+  jp.setFontSize(10);
+  jp.setTextColor(42, 33, 20);
+  jp.text("Tiempo medio de respuesta: " + (mx.avgTimeMs > 0 ? mx.avgTimeStr + " s" : "-"), ctx.MX, ctx.y);
+  jp.text("Mejor racha: " + ses.best, ctx.MX + 95, ctx.y);
+  ctx.y += 5;
+  jp.text("Mejor banda: " + (mx.bestBand !== null ? fmtFreq(parseFloat(mx.bestBand)) + " Hz (" + Math.round(mx.bestPct) + "%)" : "-"), ctx.MX, ctx.y);
+  ctx.y += 5;
+  jp.text("Banda más débil: " + (mx.worstBand !== null && mx.worstBand !== mx.bestBand ? fmtFreq(parseFloat(mx.worstBand)) + " Hz (" + Math.round(mx.worstPct) + "%)" : "-"), ctx.MX, ctx.y);
+  ctx.y += 5;
+  if (mx.boostTry > 0) {
+    jp.text("Aciertos en amplificación: " + mx.boostHit + " / " + mx.boostTry, ctx.MX, ctx.y);
+    if (mx.cutTry > 0) jp.text("Aciertos en atenuación: " + mx.cutHit + " / " + mx.cutTry, ctx.MX + 95, ctx.y);
+    ctx.y += 5;
+  } else if (mx.cutTry > 0) {
+    jp.text("Aciertos en atenuación: " + mx.cutHit + " / " + mx.cutTry, ctx.MX, ctx.y);
+    ctx.y += 5;
+  }
+  ctx.y += 4;
+}
+
+function pdfErrorDistribution(ctx, mx) {
+  var jp = ctx.jp;
+  pdfEnsureRoom(ctx, 245);
+  jp.setDrawColor(220, 206, 176);
+  jp.line(ctx.MX, ctx.y, ctx.W - ctx.MX, ctx.y);
+  ctx.y += 7;
+
+  jp.setFont("helvetica", "bold");
+  jp.setFontSize(9);
+  jp.setTextColor(140, 126, 106);
+  jp.text("DISTRIBUCIÓN DEL ERROR", ctx.MX, ctx.y);
+  ctx.y += 6;
+
+  jp.setFont("helvetica", "normal");
+  jp.setFontSize(9);
+
+  function drawDist(lbl, num, isExact) {
+    var pct = mx.distTotal > 0 ? (100 * num / mx.distTotal) : 0;
+    jp.setTextColor(90, 77, 58);
+    jp.text(lbl, ctx.MX, ctx.y);
+    jp.setDrawColor(220, 206, 176);
+    jp.setFillColor(236, 224, 203);
+    jp.rect(ctx.MX + 35, ctx.y - 3, 100, 3, "F");
+    if (isExact) jp.setFillColor(124, 144, 112);
+    else if (num === 0) jp.setFillColor(220, 206, 176);
+    else jp.setFillColor(184, 88, 71);
+    if (num > 0) jp.rect(ctx.MX + 35, ctx.y - 3, 100 * pct / 100, 3, "F");
+    jp.setTextColor(42, 33, 20);
+    jp.text(num + " (" + Math.round(pct) + "%)", ctx.MX + 142, ctx.y);
+    ctx.y += 6;
+  }
+
+  drawDist("Exacto", mx.distExact, true);
+  drawDist("1 octava", mx.distOne, false);
+  drawDist("2 octavas", mx.distTwo, false);
+  drawDist("3+ octavas", mx.distMany, false);
+}
+
+function pdfFooter(ctx) {
+  var jp = ctx.jp;
+  jp.setFont("helvetica", "normal");
+  jp.setFontSize(8);
+  jp.setTextColor(140, 126, 106);
+  var totalPages = jp.internal.getNumberOfPages();
+  var pp;
+  for (pp = 1; pp <= totalPages; pp++) {
+    jp.setPage(pp);
+    jp.text("Mimetika · Herramientas de Representación", ctx.MX, 287);
+    jp.text(pp + " / " + totalPages, ctx.W - ctx.MX, 287, { align: "right" });
+  }
+}
+
+function reportFileName(extension) {
+  var slug = (ses.user.lastName || "sesion").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  var dStr = (new Date()).toISOString().slice(0, 10);
+  return "verio_eq_" + slug + "_" + dStr + "." + extension;
+}
+
+function generatePDF() {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    showToast("La librería PDF aún no se cargó · reintentá");
+    return;
+  }
+  var jp = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  var ctx = pdfNewCtx(jp);
+  var mx = computeReportMetrics();
+
+  pdfHeader(ctx);
+  pdfParticipant(ctx);
+  pdfSessionMeta(ctx);
+  pdfConfig(ctx);
+  pdfGlobalResult(ctx, mx);
+  pdfScenarioTable(ctx);
+  pdfBandPerformance(ctx, mx);
+  pdfAdvancedMetrics(ctx, mx);
+  pdfErrorDistribution(ctx, mx);
+  pdfFooter(ctx);
+
+  safeRun(function() { jp.save(reportFileName("pdf")); }, "pdf save");
+}
+
+function xlsxResumenSheet(mx) {
+  var startStr = ses.sessionStartedAt ? ses.sessionStartedAt.toLocaleString("es-AR") : "-";
+  var endStr = ses.sessionEndedAt ? ses.sessionEndedAt.toLocaleString("es-AR") : "-";
+  var dur = (ses.sessionStartedAt && ses.sessionEndedAt) ? fmtDuration(ses.sessionEndedAt - ses.sessionStartedAt) : "-";
+  var labels = reportConfigLabels();
+
+  var omitTxt = "-";
+  if (ses.omittedFreqs.length > 0) {
+    omitTxt = "";
+    var qq;
+    for (qq = 0; qq < ses.omittedFreqs.length; qq++) {
+      omitTxt += fmtFreq(ses.omittedFreqs[qq]) + " Hz";
+      if (qq < ses.omittedFreqs.length - 1) omitTxt += ", ";
+    }
+  }
+
+  var aoa = [
+    ["Mimetika · Herramientas de Representación"],
+    ["Reporte de Entrenamiento Auditivo · Procesamiento Espectral"],
+    [],
+    ["PARTICIPANTE"],
+    ["Nombre y Apellido", (ses.user.firstName + " " + ses.user.lastName).trim() || "-"],
+    ["Email", ses.user.email || "-"],
+    [],
+    ["SESIÓN"],
+    ["Inicio", startStr],
+    ["Cierre", endStr],
+    ["Duración", dur],
+    [],
+    ["CONFIGURACIÓN"],
+    ["Región del espectro", labels.range],
+    ["Modo", labels.mode],
+    ["Tipo de Ecualizador", labels.filter],
+    ["Ganancia (dB)", ses.gainMag],
+    ["Q (1 octava)", Q_FIJO],
+    ["Señal de prueba", labels.source],
+    ["Bandas omitidas", omitTxt],
+    ["Entrenamiento Adaptativo", ses.adaptiveBias ? "Activo" : "Inactivo"],
+    ["Doble Ciego", ses.blindAB ? "Activo" : "Inactivo"],
+    ["Calentamiento", ses.warmupEnabled ? "Activo (3 escenarios previos)" : "Inactivo"],
+    [],
+    ["RESULTADO GLOBAL"],
+    ["Aciertos", ses.hits],
+    ["Total de escenarios contabilizados", ses.trials > 0 ? ses.trials : ESC_TOPE],
+    ["Porcentaje de acierto", mx.pct + " %"],
+    ["Mejor racha", ses.best],
+    ["Tiempo medio de respuesta (s)", mx.avgTimeMs > 0 ? Number(mx.avgTimeStr) : "-"]
+  ];
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [{ wch: 36 }, { wch: 44 }];
+  return ws;
+}
+
+function xlsxEscenariosSheet() {
+  var aoa = [
+    ["#", "Banda objetivo (Hz)", "Dirección", "Ganancia (dB)", "Respuesta (Hz)", "Resultado", "Distancia (octavas)", "Tiempo (s)"]
+  ];
+  var ra;
+  for (ra = 0; ra < ses.scenarioRecords.length; ra++) {
+    var r = ses.scenarioRecords[ra];
+    aoa.push([
+      r.n,
+      r.target,
+      r.sign > 0 ? "Amplificación" : "Atenuación",
+      r.gainDb,
+      r.skipped ? "" : r.answer,
+      r.skipped ? "Saltada" : (r.hit ? "Acierto" : "Error"),
+      r.skipped ? "" : Number(r.distOct.toFixed(2)),
+      Number((r.timeMs / 1000).toFixed(1))
+    ]);
+  }
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [{ wch: 5 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 20 }, { wch: 12 }];
+  return ws;
+}
+
+function xlsxBandasSheet(mx) {
+  var aoa = [["Banda (Hz)", "Intentos", "Aciertos", "Porcentaje"]];
+  var vp;
+  for (vp = 0; vp < mx.bandKeys.length; vp++) {
+    var sb = ses.bandStats[mx.bandKeys[vp]];
+    aoa.push([
+      parseFloat(mx.bandKeys[vp]),
+      sb.tries,
+      sb.ok,
+      sb.tries > 0 ? Math.round(100 * sb.ok / sb.tries) + " %" : "0 %"
+    ]);
+  }
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [{ wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 14 }];
+  return ws;
+}
+
+function xlsxMetricasSheet(mx) {
+  function pp(n) { return mx.distTotal > 0 ? Math.round(100 * n / mx.distTotal) + " %" : "0 %"; }
+  var aoa = [
+    ["MÉTRICAS AVANZADAS"],
+    [],
+    ["Tiempo medio de respuesta (s)", mx.avgTimeMs > 0 ? Number(mx.avgTimeStr) : "-"],
+    ["Mejor racha consecutiva", ses.best],
+    ["Mejor banda", mx.bestBand !== null ? fmtFreq(parseFloat(mx.bestBand)) + " Hz · " + Math.round(mx.bestPct) + " %" : "-"],
+    ["Banda más débil", mx.worstBand !== null && mx.worstBand !== mx.bestBand ? fmtFreq(parseFloat(mx.worstBand)) + " Hz · " + Math.round(mx.worstPct) + " %" : "-"],
+    ["Aciertos en amplificación", mx.boostTry > 0 ? mx.boostHit + " / " + mx.boostTry : "-"],
+    ["Aciertos en atenuación", mx.cutTry > 0 ? mx.cutHit + " / " + mx.cutTry : "-"],
+    [],
+    ["DISTRIBUCIÓN DEL ERROR"],
+    ["Distancia", "Cantidad", "Porcentaje"],
+    ["Exacto (0 octavas)", mx.distExact, pp(mx.distExact)],
+    ["1 octava", mx.distOne, pp(mx.distOne)],
+    ["2 octavas", mx.distTwo, pp(mx.distTwo)],
+    ["3 o más octavas", mx.distMany, pp(mx.distMany)]
+  ];
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [{ wch: 30 }, { wch: 30 }, { wch: 14 }];
+  return ws;
+}
+
+function generateXLSX() {
+  if (!window.XLSX) {
+    showToast("La librería Excel aún no se cargó · reintentá en unos segundos");
+    return;
+  }
+  var mx = computeReportMetrics();
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, xlsxResumenSheet(mx), "Resumen");
+  XLSX.utils.book_append_sheet(wb, xlsxEscenariosSheet(), "Escenarios");
+  XLSX.utils.book_append_sheet(wb, xlsxBandasSheet(mx), "Bandas");
+  XLSX.utils.book_append_sheet(wb, xlsxMetricasSheet(mx), "Métricas");
+  safeRun(function() { XLSX.writeFile(wb, reportFileName("xlsx")); }, "xlsx writeFile");
+}
+
+function loadStoredUser() {
+  try {
+    var d = localStorage.getItem("verio_user");
+    if (d) {
+      var p = JSON.parse(d);
+      ses.user = p;
+      var fn = document.getElementById("userFirstName");
+      var ln = document.getElementById("userLastName");
+      var em = document.getElementById("userEmail");
+      if (fn) fn.value = p.firstName || "";
+      if (ln) ln.value = p.lastName || "";
+      if (em) em.value = p.email || "";
+    }
+  } catch (e) {
+    console.warn("[loadStoredUser] no se pudo leer datos guardados:", e);
+  }
+}
+
+function persistUser() {
+  try { localStorage.setItem("verio_user", JSON.stringify(ses.user)); }
+  catch (e) { console.warn("[persistUser] no se pudo guardar:", e); }
+}
+
+function showUserModal(mode) {
+  var m = document.getElementById("userModal");
+  m.classList.remove("hidden");
+  m._mode = mode === "reset" ? "reset" : "start";
+  setTimeout(function() {
+    var fn = document.getElementById("userFirstName");
+    if (fn) fn.focus();
+  }, MODAL_FOCUS_DELAY_MS);
+}
+
+function hideUserModal() {
+  document.getElementById("userModal").classList.add("hidden");
+}
+
+function onboardingSeen() {
+  try {
+    return localStorage.getItem("verio_onboarding_seen") === "1";
+  } catch (e) {
+    console.warn("[onboardingSeen] localStorage no disponible:", e);
+    return false;
+  }
+}
+
+function markOnboardingSeen() {
+  try { localStorage.setItem("verio_onboarding_seen", "1"); }
+  catch (e) { console.warn("[markOnboardingSeen] no se pudo guardar:", e); }
+}
+
+function showOnboarding() {
+  var m = document.getElementById("onbModal");
+  if (!m) return;
+  m.classList.remove("hidden");
+  setTimeout(function() {
+    var st = document.getElementById("onbStart");
+    if (st) st.focus();
+  }, MODAL_FOCUS_DELAY_MS);
+}
+
+function dismissOnboarding() {
+  var m = document.getElementById("onbModal");
+  if (!m) return;
+  var chk = document.getElementById("onbDontShow");
+  if (chk && chk.checked) markOnboardingSeen();
+  m.classList.add("hidden");
+}
+
+function maybeShowOnboardingOnInit() {
+  if (onboardingSeen()) return;
+  showOnboarding();
+}
+
+function submitUser() {
+  var fn = document.getElementById("userFirstName");
+  var ln = document.getElementById("userLastName");
+  var em = document.getElementById("userEmail");
+  fn.classList.remove("err"); ln.classList.remove("err"); em.classList.remove("err");
+  var ok = true;
+  if (!fn.value.trim()) { fn.classList.add("err"); ok = false; }
+  if (!ln.value.trim()) { ln.classList.add("err"); ok = false; }
+  var emV = em.value.trim();
+  if (!emV || emV.indexOf("@") < 1 || emV.indexOf(".") < 0) { em.classList.add("err"); ok = false; }
+  if (!ok) { showToast("Completá todos los campos correctamente"); return; }
+  ses.user = { firstName: fn.value.trim(), lastName: ln.value.trim(), email: emV };
+  persistUser();
+  var m = document.getElementById("userModal");
+  var mode = m._mode || "start";
+  hideUserModal();
+  if (mode === "reset") {
+    performReset();
+  } else {
+    startNewSession();
+  }
+}
+
+function startNewSession() {
+  ensureContext();
+  resumeContextIfNeeded();
+  ses.sessionStartedAt = new Date();
+  rollNewQuestion(false);
+  var ok = startSource();
+  if (!ok) return;
+  ses.isPlaying = true;
+  applyEqRouting();
+  document.getElementById("btnPlay").classList.add("armed");
+  document.getElementById("btnPlayLabel").textContent = "Detener";
+  updateTrainHud();
+  if (!spectrumLoopActive) {
+    spectrumLoopActive = true;
+    requestAnimationFrame(spectrumLoop);
+  }
+}
+
+function bindUIConfigPanel() {
+  document.getElementById("srcSelect").addEventListener("change", function(e) {
+    ses.source = e.target.value;
+    var ur = document.getElementById("uploadRow");
+    ur.style.display = ses.source === "upload" ? "block" : "none";
+    if (ses.isPlaying) {
+      stopSource();
+      var ok = startSource();
+      if (!ok) {
+        ses.isPlaying = false;
+        document.getElementById("btnPlay").classList.remove("armed");
+        document.getElementById("btnPlayLabel").textContent = "Reproducir";
+      }
+    }
+  });
+
+  document.getElementById("fileInput").addEventListener("change", function(e) {
+    var f = e.target.files[0];
+    if (f) loadUploadFile(f);
+  });
+
+  document.getElementById("rangeSelect").addEventListener("change", function(e) {
+    setSrcRange(e.target.value);
+  });
+
+  document.querySelectorAll('.seg-btn[data-mode]').forEach(function(b) {
+    b.addEventListener("click", function() {
+      document.querySelectorAll('.seg-btn[data-mode]').forEach(function(x) { x.classList.remove("active"); });
+      b.classList.add("active");
+      ses.mode = b.getAttribute("data-mode");
+    });
+  });
+
+  document.getElementById("filtTypeSelect").addEventListener("change", function(e) {
+    ses.filterType = e.target.value;
+    if (filtNode && ses.questionLive) {
+      filtNode.type = ses.filterType;
+      drawBode();
+    }
+  });
+}
+
+function bindUIToggles() {
+  var aChk = document.getElementById("adaptiveBiasCheck");
+  var aLab = document.getElementById("adaptiveToggle");
+  aChk.addEventListener("change", function() {
+    ses.adaptiveBias = aChk.checked;
+    if (aChk.checked) aLab.classList.add("on");
+    else aLab.classList.remove("on");
+  });
+
+  var blChk = document.getElementById("blindABCheck");
+  var blLab = document.getElementById("blindABToggle");
+  blChk.addEventListener("change", function() {
+    ses.blindAB = blChk.checked;
+    if (blChk.checked) blLab.classList.add("on"); else blLab.classList.remove("on");
+    if (ses.blindAB) {
+      if (ses.isPlaying && ses.questionLive && !ses.answered && !ses.revealed) {
+        startBlindABLoop();
+      }
+    } else {
+      stopBlindABLoop();
+      if (ses.bypassEq) {
+        ses.bypassEq = false;
+        applyEqRouting();
+        var nbb = document.getElementById("btnNoEq");
+        if (nbb) nbb.classList.remove("armed", "sage");
+      }
+    }
+    updateTrainHud();
+  });
+
+  var wmChk = document.getElementById("warmupCheck");
+  var wmLab = document.getElementById("warmupToggle");
+  wmChk.addEventListener("change", function() {
+    ses.warmupEnabled = wmChk.checked;
+    if (wmChk.checked) wmLab.classList.add("on"); else wmLab.classList.remove("on");
+    if (!ses.sessionStartedAt && !ses.questionLive) {
+      showToast(ses.warmupEnabled ? "Calentamiento activado · 3 escenarios previos sin contar" : "Calentamiento desactivado");
+    }
+  });
+}
+
+function bindUISliders() {
+  var gSl = document.getElementById("gainSlider");
+  var gApply = debounce(function() {
+    if (filtNode && ses.questionLive) {
+      filtNode.gain.setValueAtTime(ses.currentGainSign * ses.gainMag, ctxAudio.currentTime);
+      drawBode();
+      updateTrainHud();
+    }
+  }, SLIDER_DEBOUNCE_MS);
+  gSl.addEventListener("input", function() {
+    ses.gainMag = parseFloat(gSl.value);
+    document.getElementById("gainReadout").textContent = ses.gainMag + " dB";
+    gApply();
+  });
+
+  var vSl = document.getElementById("volSlider");
+  var vApply = debounce(function() {
+    if (masterGain) masterGain.gain.setValueAtTime(ses.volume, ctxAudio.currentTime);
+  }, SLIDER_DEBOUNCE_MS);
+  vSl.addEventListener("input", function() {
+    ses.volume = parseFloat(vSl.value);
+    document.getElementById("volReadout").textContent = Math.round(ses.volume * 100) + "%";
+    vApply();
+  });
+}
+
+function bindUITransport() {
+  document.getElementById("btnPlay").addEventListener("click", togglePlay);
+  document.getElementById("btnReveal").addEventListener("click", reveal);
+  document.getElementById("btnNoEq").addEventListener("click", toggleNoEq);
+  document.getElementById("btnSkip").addEventListener("click", skipQ);
+  document.getElementById("btnNew").addEventListener("click", newQuestion);
+}
+
+function bindUIHistory() {
+  var hClr = document.getElementById("histClear");
+  if (!hClr) return;
+  hClr.addEventListener("click", function() {
+    if (confirm("¿Borrar todas las sesiones del historial? Esta acción no se puede deshacer.")) {
+      clearHistory();
+    }
+  });
+}
+
+function bindUICalibracion() {
+  var calibBtn = document.getElementById("btnCalib");
+  if (!calibBtn) return;
+  calibBtn.addEventListener("pointerdown", function(ev) {
+    startCalibracion(ev);
+    safeRun(function() { calibBtn.setPointerCapture(ev.pointerId); }, "setPointerCapture");
+  });
+  calibBtn.addEventListener("pointerup", function() {
+    if (calibActive) stopCalibracion();
+  });
+  calibBtn.addEventListener("pointercancel", function() {
+    if (calibActive) stopCalibracion();
+  });
+  calibBtn.addEventListener("pointerleave", function() {
+    if (calibActive) stopCalibracion();
+  });
+  window.addEventListener("blur", function() {
+    if (calibActive) stopCalibracion();
+  });
+  calibBtn.addEventListener("contextmenu", function(ev) { ev.preventDefault(); });
+}
+
+function bindUIModal() {
+  document.getElementById("userSubmit").addEventListener("click", submitUser);
+  document.getElementById("userClose").addEventListener("click", function() {
+    hideUserModal();
+  });
+  var emEl = document.getElementById("userEmail");
+  if (emEl) {
+    emEl.addEventListener("keydown", function(ev) {
+      if (ev.key === "Enter") submitUser();
+    });
+  }
+  var modal = document.getElementById("userModal");
+  if (modal) {
+    modal.addEventListener("keydown", function(ev) { trapFocusInModalById(ev, "userModal"); });
+  }
+}
+
+function bindUIOnboarding() {
+  var btn = document.getElementById("onbStart");
+  if (btn) btn.addEventListener("click", dismissOnboarding);
+  var cls = document.getElementById("onbClose");
+  if (cls) cls.addEventListener("click", dismissOnboarding);
+  var help = document.getElementById("btnHelp");
+  if (help) {
+    help.addEventListener("click", function() {
+      var chk = document.getElementById("onbDontShow");
+      if (chk) chk.checked = false;
+      showOnboarding();
+    });
+  }
+  var onb = document.getElementById("onbModal");
+  if (onb) {
+    onb.addEventListener("keydown", function(ev) { trapFocusInModalById(ev, "onbModal"); });
+  }
+}
+
+function trapFocusInModalById(ev, modalId) {
+  if (ev.key !== "Tab") return;
+  var modal = document.getElementById(modalId);
+  if (!modal || modal.classList.contains("hidden")) return;
+  var focusables = modal.querySelectorAll("input, button");
+  if (!focusables.length) return;
+  var first = focusables[0];
+  var last = focusables[focusables.length - 1];
+  if (ev.shiftKey && document.activeElement === first) {
+    ev.preventDefault();
+    last.focus();
+  } else if (!ev.shiftKey && document.activeElement === last) {
+    ev.preventDefault();
+    first.focus();
+  }
+}
+
+function trapFocusInModal(ev) {
+  trapFocusInModalById(ev, "userModal");
+}
+
+function bindUIKeyboard() {
+  document.addEventListener("keydown", function(ev) {
+    var userOpen = !document.getElementById("userModal").classList.contains("hidden");
+    var onbOpen = !document.getElementById("onbModal").classList.contains("hidden");
+    if (userOpen) {
+      if (ev.key === "Escape") hideUserModal();
+      return;
+    }
+    if (onbOpen) {
+      if (ev.key === "Escape") dismissOnboarding();
+      return;
+    }
+    if (ev.target.tagName === "INPUT" || ev.target.tagName === "SELECT") return;
+    var key = ev.key.toLowerCase();
+    if (ev.code === "Space") { ev.preventDefault(); togglePlay(); return; }
+    if (key === "r") { reveal(); return; }
+    if (key === "b") { toggleNoEq(); return; }
+    if (key === "n") { skipQ(); return; }
+  });
+}
+
+function bindUI() {
+  bindUIConfigPanel();
+  bindUIToggles();
+  bindUISliders();
+  bindUITransport();
+  bindUIHistory();
+  bindUICalibracion();
+  bindUIModal();
+  bindUIOnboarding();
+  bindUIKeyboard();
+}
+
+function registerStatsListeners() {
+  onChange("*", updateScoreHud);
+  onChange("*", updateBandStats);
+  onChange("*", updateHistoryStrip);
+  onChange("*", updateLearningCurve);
+  onChange("*", updateAdvancedStats);
+  onChange("*", updateTrainHud);
+}
+
+function attachLifecycleHandlers() {
+  window.addEventListener("beforeunload", function() {
+    safeRun(function() {
+      stopBlindABLoop();
+      stopAutoTimerBar();
+      if (ses.autoTimer) { clearTimeout(ses.autoTimer); ses.autoTimer = null; }
+      if (calibActive) stopCalibracion();
+      if (ses.isPlaying) stopSource();
+      if (ctxAudio) {
+        try { ctxAudio.close(); } catch (e) {}
+      }
+    }, "beforeunload cleanup");
+  });
+
+  document.addEventListener("visibilitychange", function() {
+    if (document.hidden && calibActive) {
+      safeRun(function() { stopCalibracion(); }, "visibility calib stop");
+    }
+  });
+}
+
+function applyUrlConfig() {
+  var qs = window.location.search;
+  if (!qs || qs.length < 2) return false;
+
+  var params = {};
+  var raw = qs.charAt(0) === "?" ? qs.substring(1) : qs;
+  var pieces = raw.split("&");
+  var pi;
+  for (pi = 0; pi < pieces.length; pi++) {
+    var eqIdx = pieces[pi].indexOf("=");
+    if (eqIdx < 0) continue;
+    var k = decodeURIComponent(pieces[pi].substring(0, eqIdx)).toLowerCase();
+    var v = decodeURIComponent(pieces[pi].substring(eqIdx + 1)).toLowerCase();
+    params[k] = v;
+  }
+
+  var applied = 0;
+  var labels = [];
+
+  if (params.mode) {
+    var modeOk = { boost: 1, cut: 1, both: 1 };
+    if (modeOk[params.mode]) {
+      ses.mode = params.mode;
+      var modeBtns = document.querySelectorAll('.seg-btn[data-mode]');
+      var mb;
+      for (mb = 0; mb < modeBtns.length; mb++) {
+        if (modeBtns[mb].getAttribute("data-mode") === params.mode) modeBtns[mb].classList.add("active");
+        else modeBtns[mb].classList.remove("active");
+      }
+      applied += 1;
+      labels.push("modo");
+    }
+  }
+
+  if (params.range) {
+    var rangeOk = { full: 1, low: 1, mid: 1, himid: 1, high: 1 };
+    if (rangeOk[params.range]) {
+      var rs = document.getElementById("rangeSelect");
+      if (rs) rs.value = params.range;
+      safeRun(function() { setSrcRange(params.range); }, "applyUrl setSrcRange");
+      applied += 1;
+      labels.push("región");
+    }
+  }
+
+  if (params.gain) {
+    var gnum = parseInt(params.gain, 10);
+    if (!isNaN(gnum) && gnum >= 2 && gnum <= 18) {
+      ses.gainMag = gnum;
+      var gSl = document.getElementById("gainSlider");
+      if (gSl) gSl.value = gnum;
+      var gr = document.getElementById("gainReadout");
+      if (gr) gr.textContent = gnum + " dB";
+      applied += 1;
+      labels.push("ganancia");
+    }
+  }
+
+  if (params.source) {
+    var srcOk = { pink: 1, white: 1, drum: 1, tone: 1 };
+    if (srcOk[params.source]) {
+      ses.source = params.source;
+      var ss = document.getElementById("srcSelect");
+      if (ss) ss.value = params.source;
+      applied += 1;
+      labels.push("señal");
+    }
+  }
+
+  if (params.filter) {
+    var ftOk = { peaking: 1, lowshelf: 1, highshelf: 1 };
+    if (ftOk[params.filter]) {
+      ses.filterType = params.filter;
+      var fs = document.getElementById("filtTypeSelect");
+      if (fs) fs.value = params.filter;
+      applied += 1;
+      labels.push("filtro");
+    }
+  }
+
+  if (typeof params.adaptive !== "undefined") {
+    var aOn = params.adaptive === "1" || params.adaptive === "true" || params.adaptive === "on";
+    ses.adaptiveBias = aOn;
+    var aChk = document.getElementById("adaptiveBiasCheck");
+    var aLab = document.getElementById("adaptiveToggle");
+    if (aChk) aChk.checked = aOn;
+    if (aLab) { if (aOn) aLab.classList.add("on"); else aLab.classList.remove("on"); }
+    applied += 1;
+    labels.push("adaptativo");
+  }
+
+  if (typeof params.blind !== "undefined") {
+    var bOn = params.blind === "1" || params.blind === "true" || params.blind === "on";
+    ses.blindAB = bOn;
+    var bChk = document.getElementById("blindABCheck");
+    var bLab = document.getElementById("blindABToggle");
+    if (bChk) bChk.checked = bOn;
+    if (bLab) { if (bOn) bLab.classList.add("on"); else bLab.classList.remove("on"); }
+    applied += 1;
+    labels.push("doble ciego");
+  }
+
+  if (typeof params.warmup !== "undefined") {
+    var wOn = params.warmup === "1" || params.warmup === "true" || params.warmup === "on";
+    ses.warmupEnabled = wOn;
+    var wChk = document.getElementById("warmupCheck");
+    var wLab = document.getElementById("warmupToggle");
+    if (wChk) wChk.checked = wOn;
+    if (wLab) { if (wOn) wLab.classList.add("on"); else wLab.classList.remove("on"); }
+    applied += 1;
+    labels.push("calentamiento");
+  }
+
+  if (params.omit) {
+    var rawList = params.omit.split(",");
+    var newOmit = [];
+    var rk;
+    for (rk = 0; rk < rawList.length; rk++) {
+      var fNum = parseFloat(rawList[rk]);
+      if (!isNaN(fNum)) newOmit.push(fNum);
+    }
+    if (newOmit.length > 0) {
+      ses.omittedFreqs = newOmit;
+      applied += 1;
+      labels.push("bandas omitidas");
+    }
+  }
+
+  return applied > 0 ? labels : false;
+}
+
+function init() {
+  registerStatsListeners();
+  bindUI();
+  loadStoredUser();
+  var urlApplied = applyUrlConfig();
+  paintAnswerGrid();
+  drawBode();
+  notifyAll();
+  renderHistory();
+  attachLifecycleHandlers();
+  if (urlApplied) {
+    setTimeout(function() {
+      showToast("Configuración cargada desde URL · " + urlApplied.join(", "));
+    }, 500);
+  }
+  setTimeout(maybeShowOnboardingOnInit, 220);
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
